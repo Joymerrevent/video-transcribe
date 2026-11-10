@@ -197,8 +197,8 @@ def whisper(audio: str, workdir: str, model: str | None, lang: str | None) -> tu
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("source", help="video URL or local audio/video file")
-    ap.add_argument("--lang", default="ja,en",
-                    help="preferred subtitle languages, comma-separated (default: ja,en)")
+    ap.add_argument("--lang", default="en",
+                    help="preferred subtitle languages, comma-separated, in priority order (default: en)")
     ap.add_argument("--whisper", action="store_true",
                     help="skip platform subtitles and always transcribe the audio")
     ap.add_argument("--model", help="Whisper model (default depends on backend)")

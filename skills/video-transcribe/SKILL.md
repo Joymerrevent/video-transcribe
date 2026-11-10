@@ -21,7 +21,7 @@ The script prints a JSON report on stdout (progress goes to stderr). Read the fi
 What the script does, so you can explain it if asked:
 
 1. Reads the video's metadata with yt-dlp (no download).
-2. Picks subtitles in this order: human-made subtitles in a preferred language (`--lang`, default `ja,en`), human-made subtitles in the spoken language, then the platform's auto-generated captions in the spoken language. Auto-*translated* captions are never used, because they are a machine translation rather than what was said.
+2. Picks subtitles in this order: human-made subtitles in a preferred language (`--lang`, default `en`), human-made subtitles in the spoken language, then the platform's auto-generated captions in the spoken language. Auto-*translated* captions are never used, because they are a machine translation rather than what was said.
 3. If there are no usable subtitles, it downloads the audio only (not the video) and runs Whisper locally. The audio is deleted afterwards.
 4. Checks Whisper output for repetition loops — Whisper sometimes repeats one line for minutes over silence or noise while still exiting successfully.
 
@@ -31,7 +31,7 @@ Results are cached under `~/.cache/video-transcribe/<site>-<id>/`, so asking abo
 
 | Option | When to use |
 |---|---|
-| `--lang en,ja` | The user wants subtitles in a different language order |
+| `--lang ja,en` | The user wants subtitles in other languages. List codes in priority order. Subtitles in the spoken language are still used as a fallback, so a Japanese video with only Japanese subtitles works without this |
 | `--whisper` | Auto-captions came back but read badly (no punctuation, misheard words) and the user wants better text. Whisper is slower but usually cleaner |
 | `--spoken-lang ja` | Whisper guessed the wrong language (check `language` in the report) |
 | `--model <name>` | A smaller model is needed for speed, e.g. `mlx-community/whisper-small-mlx` |
