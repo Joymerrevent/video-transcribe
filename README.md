@@ -41,7 +41,7 @@ Run it with `--help` for all options. Transcripts are cached in `~/.cache/video-
 
 ## How subtitles are chosen
 
-1. Human-made subtitles in a preferred language (`--lang`, default `ja,en`)
+1. Human-made subtitles in a preferred language (`--lang`, default `en`)
 2. Human-made subtitles in the spoken language
 3. Auto-generated captions in the spoken language
 4. Otherwise, local Whisper on the audio
@@ -101,7 +101,7 @@ python3 skills/video-transcribe/scripts/transcribe.py "<URL かファイル>" [-
 
 ### 字幕の選び方
 
-1. 人が作った字幕のうち、優先する言語のもの（`--lang`。初期値は `ja,en`）
+1. 人が作った字幕のうち、優先する言語のもの（`--lang`。初期値は `en`）
 2. 人が作った字幕のうち、話している言語のもの
 3. 自動生成の字幕のうち、話している言語のもの
 4. どれもなければ、音声を手元の Whisper で文字に起こす
