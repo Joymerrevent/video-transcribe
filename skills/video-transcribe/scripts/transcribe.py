@@ -98,7 +98,8 @@ def hms(x: float) -> str:
 
 def parse_cues(path: str) -> list[tuple[float, str]]:
     """Parse VTT or SRT into (start_seconds, text), dropping rolling-caption repeats."""
-    raw = open(path, encoding="utf-8").read().replace("\r\n", "\n")
+    with open(path, encoding="utf-8") as f:
+        raw = f.read().replace("\r\n", "\n")
     out: list[tuple[float, str]] = []
     recent: list[str] = []
     for block in re.split(r"\n{2,}", raw):
@@ -231,7 +232,8 @@ def main() -> None:
 
     if os.path.exists(txt_path) and os.path.exists(info_path) and not args.force:
         log("using cached transcript (pass --force to redo)")
-        print(json.dumps(json.load(open(info_path, encoding="utf-8")), ensure_ascii=False, indent=2))
+        with open(info_path, encoding="utf-8") as f:
+            print(json.dumps(json.load(f), ensure_ascii=False, indent=2))
         return
 
     info = {

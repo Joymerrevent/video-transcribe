@@ -48,6 +48,14 @@ Run it with `--help` for all options. Transcripts are cached in `~/.cache/video-
 
 Auto-translated captions are never used, because they are a machine translation of what was said. Auto-generated captions often lack punctuation; pass `--whisper` (or ask the agent to use Whisper) for cleaner text.
 
+## Development
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+CI runs the same tests on Python 3.9 and 3.13. Report security issues as described in [SECURITY.md][security].
+
 ## Credits
 
 The approach is based on the `watch-video` skill in [coreyhaines31/makerskills][makerskills] (MIT), reduced to transcription only.
@@ -108,6 +116,14 @@ python3 skills/video-transcribe/scripts/transcribe.py "<URL かファイル>" [-
 
 自動翻訳の字幕は使いません。自動翻訳の字幕は、話した内容を機械で翻訳したもので、文字起こしではないためです。自動生成の字幕は句読点がなく読みにくいことが多いので、きれいな文章にしたいときは `--whisper` を付けて（またはエージェントに「Whisper で」と頼んで）ください。
 
+### 開発
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+CI でも、Python 3.9 と 3.13 で同じテストを実行します。セキュリティの問題の報告のしかたは [SECURITY.md][security] を見てください。
+
 ### クレジット
 
 [coreyhaines31/makerskills][makerskills]（MIT ライセンス）の `watch-video` スキルをもとに、文字起こしの機能だけに絞って作りました。
@@ -120,3 +136,4 @@ python3 skills/video-transcribe/scripts/transcribe.py "<URL かファイル>" [-
 [yt-dlp]: https://github.com/yt-dlp/yt-dlp
 [makerskills]: https://github.com/coreyhaines31/makerskills
 [license]: LICENSE
+[security]: SECURITY.md
