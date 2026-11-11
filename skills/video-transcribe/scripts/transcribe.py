@@ -168,10 +168,15 @@ def pick_subtitle(meta: dict, langs: list[str]) -> tuple[str, str] | None:
             return "subtitles", key
     if spoken and match(manual, spoken):
         return "subtitles", match(manual, spoken)
+    # Auto-dubbed videos have one "-orig" track per audio track (e.g. ja-orig and
+    # en-US-orig); only the one in the spoken language is what was actually said.
     orig = [k for k in auto if k.endswith("-orig")]
-    if orig:
-        return "auto-captions", orig[0]
-    if spoken and spoken in auto:
+    if not spoken:
+        return ("auto-captions", orig[0]) if orig else None
+    for key in orig:
+        if key.split("-")[0] == spoken:
+            return "auto-captions", key
+    if spoken in auto:
         return "auto-captions", spoken
     return None
 
@@ -266,7 +271,8 @@ def main() -> None:
         if not is_file:
             for old in glob.glob(os.path.join(workdir, "audio.*")):
                 os.remove(old)
-            run(["yt-dlp", "-f", "bestaudio/best", "--no-playlist",
+            # Prefer the original audio over auto-dubbed tracks.
+            run(["yt-dlp", "-f", "bestaudio[format_note*=original]/bestaudio/best", "--no-playlist",
                  "-o", os.path.join(workdir, "audio.%(ext)s"), source])
             audio = glob.glob(os.path.join(workdir, "audio.*"))[0]
         spoken = args.spoken_lang or (meta.get("language") or "").split("-")[0] or None
