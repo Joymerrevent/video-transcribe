@@ -104,6 +104,30 @@ class PickSubtitleTest(unittest.TestCase):
         self.assertIsNone(transcribe.pick_subtitle({}, ["en"]))
 
 
+class BuildMarkdownTest(unittest.TestCase):
+    def test_okf_frontmatter_and_chapters(self):
+        info = {
+            "source": "https://example.com/v", "title": 'Say "hi"', "uploader": "me",
+            "duration": "00:01:00", "upload_date": "20260102", "method": "whisper",
+            "language": "ja", "chapters": [{"start": "00:00:00", "title": "Intro"},
+                                           {"start": "00:00:30", "title": "Main"}],
+        }
+        md = transcribe.build_markdown(info, ["[00:00:01] a", "[00:00:31] b"])
+        front, body = md.split("\n---\n", 1)
+        self.assertTrue(front.startswith("---\ntype: \"reference\"\n"))
+        self.assertIn('title: "Say \\"hi\\""', front)
+        self.assertIn('upload_date: "2026-01-02"', front)
+        self.assertIn('tags: ["transcript"]', front)
+        self.assertIn("\ntimestamp: ", front)
+        self.assertEqual(body, '\n# Say "hi"\n\n## Intro\n\n- [00:00:01] a\n\n## Main\n\n- [00:00:31] b\n')
+
+    def test_missing_fields_are_left_out(self):
+        md = transcribe.build_markdown({"title": "x.mp3", "method": "whisper"}, ["[00:00:00] hi"])
+        self.assertNotIn("uploader", md)
+        self.assertNotIn("null", md)
+        self.assertTrue(md.endswith("# x.mp3\n\n- [00:00:00] hi\n"))
+
+
 class HelpersTest(unittest.TestCase):
     def test_time_conversions(self):
         self.assertEqual(transcribe.secs("01:02:03.500"), 3723.5)
