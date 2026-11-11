@@ -82,6 +82,19 @@ class PickSubtitleTest(unittest.TestCase):
                 "automatic_captions": {"en": [], "ja-orig": [], "ja": []}}
         self.assertEqual(transcribe.pick_subtitle(meta, ["en"]), ("auto-captions", "ja-orig"))
 
+    def test_auto_dubbed_video_uses_spoken_language_track(self):
+        meta = {"language": "ja", "subtitles": {},
+                "automatic_captions": {"en-US-orig": [], "ja-orig": [], "en": []}}
+        self.assertEqual(transcribe.pick_subtitle(meta, ["en"]), ("auto-captions", "ja-orig"))
+
+    def test_dub_only_original_track_is_not_used(self):
+        meta = {"language": "ja", "subtitles": {}, "automatic_captions": {"en-US-orig": []}}
+        self.assertIsNone(transcribe.pick_subtitle(meta, ["en"]))
+
+    def test_unknown_spoken_language_uses_original_track(self):
+        meta = {"subtitles": {}, "automatic_captions": {"en-orig": [], "fr": []}}
+        self.assertEqual(transcribe.pick_subtitle(meta, ["en"]), ("auto-captions", "en-orig"))
+
     def test_translated_only_returns_none(self):
         meta = {"language": "ja", "subtitles": {"live_chat": []},
                 "automatic_captions": {"en": [], "fr": []}}
