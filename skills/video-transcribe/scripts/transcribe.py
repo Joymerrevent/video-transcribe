@@ -27,32 +27,33 @@ DEFAULT_OUT = os.path.join(
 LOOP_RUN = 8  # this many identical captions in a row means Whisper is looping
 
 # (command, default model, argument builder). First one found on PATH wins.
+# "--" ends option parsing, so a file name starting with "-" is never read as an option.
 BACKENDS = [
     (
         "mlx_whisper",  # Apple Silicon
         "mlx-community/whisper-large-v3-turbo",
         lambda audio, model, outdir, lang: [
-            "mlx_whisper", audio, "--model", model, "--output-dir", outdir,
+            "mlx_whisper", "--model", model, "--output-dir", outdir,
             "--output-name", "whisper", "--output-format", "srt",
             "--condition-on-previous-text", "False",
-        ] + (["--language", lang] if lang else []),
+        ] + (["--language", lang] if lang else []) + ["--", audio],
     ),
     (
         "whisper-ctranslate2",  # faster-whisper, any platform
         "large-v3-turbo",
         lambda audio, model, outdir, lang: [
-            "whisper-ctranslate2", audio, "--model", model, "--output_dir", outdir,
+            "whisper-ctranslate2", "--model", model, "--output_dir", outdir,
             "--output_format", "srt", "--condition_on_previous_text", "False",
             "--vad_filter", "True",
-        ] + (["--language", lang] if lang else []),
+        ] + (["--language", lang] if lang else []) + ["--", audio],
     ),
     (
         "whisper",  # openai-whisper
         "turbo",
         lambda audio, model, outdir, lang: [
-            "whisper", audio, "--model", model, "--output_dir", outdir,
+            "whisper", "--model", model, "--output_dir", outdir,
             "--output_format", "srt", "--condition_on_previous_text", "False",
-        ] + (["--language", lang] if lang else []),
+        ] + (["--language", lang] if lang else []) + ["--", audio],
     ),
 ]
 
@@ -276,7 +277,7 @@ def main() -> None:
         need("yt-dlp", "brew install yt-dlp / pipx install yt-dlp")
         source = args.source
         meta = json.loads(run(["yt-dlp", "--dump-single-json", "--skip-download",
-                               "--no-playlist", source]))
+                               "--no-playlist", "--", source]))
         key = slug(f"{meta.get('extractor_key', 'web')}-{meta.get('id', 'video')}").lower()
 
     workdir = os.path.join(args.out, key)
@@ -318,7 +319,7 @@ def transcribe(args, source: str, meta: dict, is_file: bool, langs: list[str],
         for old in glob.glob(os.path.join(workdir, "subs.*")):
             os.remove(old)
         run(["yt-dlp", "--skip-download", "--no-playlist", flag, "--sub-langs", lang,
-             "--sub-format", "vtt/srt/best", "-o", os.path.join(workdir, "subs.%(ext)s"), source])
+             "--sub-format", "vtt/srt/best", "-o", os.path.join(workdir, "subs.%(ext)s"), "--", source])
         files = glob.glob(os.path.join(workdir, "subs.*"))
         if not files:
             fail(f"yt-dlp did not write the {lang} {kind}")
@@ -331,7 +332,7 @@ def transcribe(args, source: str, meta: dict, is_file: bool, langs: list[str],
                 os.remove(old)
             # Prefer the original audio over auto-dubbed tracks.
             run(["yt-dlp", "-f", "bestaudio[format_note*=original]/bestaudio/best", "--no-playlist",
-                 "-o", os.path.join(workdir, "audio.%(ext)s"), source])
+                 "-o", os.path.join(workdir, "audio.%(ext)s"), "--", source])
             audio = glob.glob(os.path.join(workdir, "audio.*"))[0]
         spoken = args.spoken_lang or (meta.get("language") or "").split("-")[0] or None
         srt, backend, model = whisper(audio, workdir, args.model, spoken)
