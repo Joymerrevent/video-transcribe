@@ -16,7 +16,9 @@ This skill only produces the transcript. Summaries, notes, or answers are up to 
 python3 <this-skill-dir>/scripts/transcribe.py "<url-or-file>"
 ```
 
-The script prints a JSON report on stdout (progress goes to stderr). Read the file at `transcript` in that report. Each line looks like `[00:01:23] text`, so you can cite moments by time.
+The script prints a short JSON report on stdout (progress goes to stderr); it never prints the transcript itself. Read the file at `transcript` in that report. Each line looks like `[00:01:23] text`, so you can cite moments by time.
+
+Don't paste the whole transcript into the chat unless the user asks for it: a long video fills the screen with thousands of lines. Reply with the title, the method, where the file is, and whatever the user asked about, quoting only the relevant lines with their timestamps.
 
 What the script does, so you can explain it if asked:
 
@@ -35,7 +37,8 @@ Results are cached under `~/.cache/video-transcribe/<site>-<id>/`, so asking abo
 | `--whisper` | Auto-captions came back but read badly (no punctuation, misheard words) and the user wants better text. Whisper is slower but usually cleaner |
 | `--spoken-lang ja` | Whisper guessed the wrong language (check `language` in the report) |
 | `--model <name>` | A smaller model is needed for speed, e.g. `mlx-community/whisper-small-mlx` |
-| `--force` | Redo a cached transcript |
+| `--save <dir>` | The user wants the transcript kept as a file, e.g. in their project. Writes `<dir>/<site>-<id>.md`: Markdown with OKF (Open Knowledge Format) frontmatter (`type: reference`, title, description, source, method, ...) and the timestamped lines, split by chapter when the video has chapters. Choose the folder from the user's words or the project's conventions (a raw-material or notes folder); ask if it is unclear rather than writing into the project root |
+| `--force` | Redo a cached transcript, and overwrite a file written by `--save` (otherwise an existing file is kept, since the user may have edited it) |
 | `--out <dir>` | The user asked to save the transcript in a specific place |
 
 ## Reading the report
