@@ -11,6 +11,7 @@ mlx_whisper / whisper-ctranslate2 / whisper.
 from __future__ import annotations
 
 import argparse
+import datetime
 import glob
 import html
 import json
@@ -200,6 +201,51 @@ def whisper(audio: str, workdir: str, model: str | None, lang: str | None) -> tu
     raise AssertionError  # unreachable
 
 
+def build_markdown(info: dict, lines: list[str]) -> str:
+    """Render the transcript as Markdown with OKF (Open Knowledge Format) frontmatter."""
+    title = info.get("title") or "Untitled video"
+    by = f" by {info['uploader']}" if info.get("uploader") else ""
+    date = info.get("upload_date") or ""
+    if re.fullmatch(r"\d{8}", date):
+        date = f"{date[:4]}-{date[4:6]}-{date[6:]}"
+    fields = {
+        "type": "reference",
+        "title": title,
+        "description": f"Transcript of the video \"{title}\"{by}.",
+        "tags": ["transcript"],
+        "timestamp": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
+        "source": info.get("source"),
+        "uploader": info.get("uploader"),
+        "duration": info.get("duration"),
+        "upload_date": date or None,
+        "method": info.get("method"),
+        "language": info.get("language"),
+    }
+    # JSON strings and arrays are valid YAML, so json.dumps quotes values safely.
+    out = ["---"] + [f"{k}: {json.dumps(v, ensure_ascii=False)}" for k, v in fields.items() if v]
+    out += ["---", "", f"# {title}", ""]
+    chapters = list(info.get("chapters") or [])
+    for line in lines:
+        # Lines start with "[hh:mm:ss]", so zero-padded times compare as strings.
+        while chapters and line[1:9] >= chapters[0]["start"]:
+            out += ["", f"## {chapters.pop(0)['title']}", ""]
+        out.append(f"- {line}")
+    return "\n".join(out).replace("\n\n\n", "\n\n") + "\n"
+
+
+def save_markdown(info: dict, txt_path: str, save_dir: str, key: str, force: bool) -> str:
+    path = os.path.join(save_dir, key + ".md")
+    if os.path.exists(path) and not force:
+        log(f"{path} already exists; pass --force to overwrite it")
+        return path
+    with open(txt_path, encoding="utf-8") as f:
+        lines = [l.rstrip("\n") for l in f if l.strip()]
+    os.makedirs(save_dir, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(build_markdown(info, lines))
+    return path
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("source", help="video URL or local audio/video file")
@@ -211,7 +257,10 @@ def main() -> None:
     ap.add_argument("--spoken-lang", help="spoken language hint for Whisper, e.g. ja")
     ap.add_argument("--out", default=DEFAULT_OUT, help=f"output root (default: {DEFAULT_OUT})")
     ap.add_argument("--keep-audio", action="store_true", help="keep the downloaded audio")
-    ap.add_argument("--force", action="store_true", help="ignore a cached transcript")
+    ap.add_argument("--save", metavar="DIR",
+                    help="also save the transcript as Markdown with OKF frontmatter in DIR")
+    ap.add_argument("--force", action="store_true",
+                    help="ignore a cached transcript and overwrite a saved Markdown file")
     args = ap.parse_args()
     langs = [l.strip() for l in args.lang.split(",") if l.strip()]
     # `uv tool install` / `pipx install` put commands here, which is often not on PATH.
@@ -221,7 +270,7 @@ def main() -> None:
     meta: dict = {}
     if is_file:
         source = os.path.abspath(args.source)
-        key = "file-" + slug(os.path.splitext(os.path.basename(source))[0])
+        key = "file-" + slug(os.path.splitext(os.path.basename(source))[0]).lower()
         meta = {"title": os.path.basename(source)}
     else:
         need("yt-dlp", "brew install yt-dlp / pipx install yt-dlp")
@@ -238,9 +287,18 @@ def main() -> None:
     if os.path.exists(txt_path) and os.path.exists(info_path) and not args.force:
         log("using cached transcript (pass --force to redo)")
         with open(info_path, encoding="utf-8") as f:
-            print(json.dumps(json.load(f), ensure_ascii=False, indent=2))
-        return
+            info = json.load(f)
+    else:
+        info = transcribe(args, source, meta, is_file, langs, workdir, txt_path)
+        with open(info_path, "w", encoding="utf-8") as f:
+            json.dump(info, f, ensure_ascii=False, indent=2)
+    if args.save:
+        info["saved"] = save_markdown(info, txt_path, args.save, key, args.force)
+    print(json.dumps(info, ensure_ascii=False, indent=2))
 
+
+def transcribe(args, source: str, meta: dict, is_file: bool, langs: list[str],
+               workdir: str, txt_path: str) -> dict:
     info = {
         "source": source,
         "title": meta.get("title"),
@@ -291,9 +349,7 @@ def main() -> None:
         characters=sum(len(t) for _, t in cues),
         warnings=find_loops(cues) if info["method"] == "whisper" else [],
     )
-    with open(info_path, "w", encoding="utf-8") as f:
-        json.dump(info, f, ensure_ascii=False, indent=2)
-    print(json.dumps(info, ensure_ascii=False, indent=2))
+    return info
 
 
 if __name__ == "__main__":
