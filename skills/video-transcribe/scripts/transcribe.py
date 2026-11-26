@@ -19,12 +19,14 @@ import html
 import json
 import math
 import os
+import pathlib
 import re
 import shutil
 import subprocess
 import sys
 import unicodedata
 
+VERSION = "0.1.0"  # bump on each release; a test checks it against CHANGELOG.md
 DEFAULT_OUT = os.path.join(
     os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")), "video-transcribe"
 )
@@ -489,25 +491,36 @@ def recheck(args, info: dict, get_audio, workdir: str, txt_path: str) -> dict:
     return dict(done, report=report, **stats)
 
 
+def resource_uri(info: dict) -> str | None:
+    """The video as a URI: its page URL, or a file: URI for a local file."""
+    target = info.get("url") or info.get("source")
+    # OKF reads a bare "/path" as a path inside the bundle, so local files need a file: URI.
+    if target and os.path.isabs(target):
+        return pathlib.Path(target).as_uri()
+    return target
+
+
 def build_markdown(info: dict, lines: list[str]) -> str:
-    """Render the transcript as Markdown with OKF (Open Knowledge Format) frontmatter."""
+    """Render the transcript as Markdown with OKF (Open Knowledge Format) v0.3 frontmatter."""
     title = info.get("title") or "Untitled video"
     by = f" by {info['uploader']}" if info.get("uploader") else ""
     date = info.get("upload_date") or ""
     if re.fullmatch(r"\d{8}", date):
         date = f"{date[:4]}-{date[4:6]}-{date[6:]}"
+    now = datetime.datetime.now().astimezone().isoformat(timespec="seconds")
     fields = {
-        "type": "reference",
+        "type": "Reference",
         "title": title,
         "description": f"Transcript of the video \"{title}\"{by}.",
+        "resource": resource_uri(info),
         "tags": ["transcript"],
-        "timestamp": datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
-        "source": info.get("source"),
-        "uploader": info.get("uploader"),
-        "duration": info.get("duration"),
-        "upload_date": date or None,
-        "method": info.get("method"),
-        "language": info.get("language"),
+        "generated": {"by": f"video-transcribe/{VERSION}", "at": now},
+        # Keys outside OKF get the x-<producer>- prefix, which OKF never uses for its own keys.
+        "x-video-transcribe-uploader": info.get("uploader"),
+        "x-video-transcribe-duration": info.get("duration"),
+        "x-video-transcribe-upload_date": date or None,
+        "x-video-transcribe-method": info.get("method"),
+        "x-video-transcribe-language": info.get("language"),
     }
     # JSON strings and arrays are valid YAML, so json.dumps quotes values safely.
     out = ["---"] + [f"{k}: {json.dumps(v, ensure_ascii=False)}" for k, v in fields.items() if v]
@@ -606,6 +619,7 @@ def transcribe(args, source: str, meta: dict, is_file: bool, langs: list[str],
                get_audio, workdir: str, txt_path: str) -> dict:
     info = {
         "source": source,
+        "url": meta.get("webpage_url"),  # yt-dlp drops the ?si= and &t= of a shared link
         "title": meta.get("title"),
         "uploader": meta.get("uploader") or meta.get("channel"),
         "duration": hms(meta["duration"]) if meta.get("duration") else None,
