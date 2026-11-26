@@ -1,14 +1,14 @@
 ---
 name: video-transcribe
-description: Get the full transcript of a video so you can read, quote, or answer questions about what it says. Works with YouTube and any other URL yt-dlp supports (Vimeo, X, TikTok, Loom, ...), plus local audio/video files. Uses the platform's own subtitles when they exist and falls back to local Whisper transcription when they don't, so videos without captions work too. Nothing is uploaded to any API. Use this whenever the user shares a video link or file and wants its content — "transcribe this", "what does this video say", "get the subtitles", "文字起こしして", "この動画の内容を教えて", "字幕を取って" — even if they never say "transcript".
+description: Transcribe a video into a timestamped text file, and report where the file is without reading it. Works with YouTube and any other URL yt-dlp supports (Vimeo, X, TikTok, Loom, ...), plus local audio/video files. Uses the platform's own subtitles when they exist and falls back to local Whisper speech recognition when they don't, so videos without captions work too. Transcribing uploads nothing to any API and uses no AI tokens, and its accuracy comes from the subtitles or Whisper, not from the AI model; the transcript is read only when the user asks about the video. Use this whenever the user shares a video link or file and wants its content — "transcribe this", "what does this video say", "get the subtitles", "文字起こしして", "この動画の内容を教えて", "字幕を取って" — even if they never say "transcript".
 license: MIT
 compatibility: Needs python3 (3.9+), yt-dlp, and ffmpeg. Videos without subtitles also need a local Whisper CLI (mlx_whisper on Apple Silicon, whisper-ctranslate2 or openai-whisper elsewhere).
 ---
 
 # Video Transcribe
 
-Turn a video into a timestamped plain-text transcript, then work from that text.
-This skill only produces the transcript. Summaries, notes, or answers are up to you and the user's request — write them from the transcript afterwards in whatever shape the user asked for.
+Turn a video into a timestamped plain-text transcript file, and stop there.
+This skill's job ends when the transcript is saved: the script reports where the file is, with the video's title, the method, warnings, and chapters. Summaries, notes, and answers are not part of this skill.
 
 ## Run
 
@@ -16,9 +16,20 @@ This skill only produces the transcript. Summaries, notes, or answers are up to 
 python3 <this-skill-dir>/scripts/transcribe.py "<url-or-file>"
 ```
 
-The script prints a short JSON report on stdout (progress goes to stderr); it never prints the transcript itself. Read the file at `transcript` in that report. Each line looks like `[00:01:23] text`, so you can cite moments by time.
+The script prints a short JSON report on stdout (progress goes to stderr); it never prints the transcript itself. The transcript is in the file at `transcript` in that report. Each line looks like `[00:01:23] text`.
 
-Don't paste the whole transcript into the chat unless the user asks for it: a long video fills the screen with thousands of lines. Reply with the title, the method, where the file is, and whatever the user asked about, quoting only the relevant lines with their timestamps.
+## After the script finishes
+
+Do not read the transcript file when the script finishes. Transcribing runs on this computer and uses none of your tokens; reading the file uses tokens in proportion to the video's length, so it waits until the user asks about the video.
+
+Reply with only these:
+
+- the title
+- the method (see "Reading the report")
+- where the transcript is: `transcript`, and `saved` when `--save` was used
+- the warnings, if there are any
+
+When the user asks about the video, whether in a later message or in the same message as the request to transcribe ("what does this video say about pricing?"), answering is up to you, outside this skill. Decide how to read the transcript for that question: the whole file, or only the parts you find by searching it. Each line starts with its time, so you can cite moments by time. Don't paste the whole transcript into the chat unless the user asks for it: a long video fills the screen with thousands of lines.
 
 What the script does, so you can explain it if asked:
 
@@ -39,24 +50,26 @@ Results are cached under `~/.cache/video-transcribe/<site>-<id>/`, so asking abo
 | `--model <name>` | A smaller model is needed for speed, e.g. `mlx-community/whisper-small-mlx` |
 | `--save <dir>` | The user wants the transcript kept as a file, e.g. in their project. Writes `<dir>/<site>-<id>.md`: Markdown with OKF (Open Knowledge Format) v0.3 frontmatter (every OKF key that applies to any type, such as `type: Reference`, title, description, the video URL as `resource`, `generated`, and `status: "stable"`, with `null` for keys that have no value; then `x-video-transcribe-*` keys such as the method) and the timestamped lines, split by chapter when the video has chapters. Choose the folder from the user's words or the project's conventions (a raw-material or notes folder); ask if it is unclear rather than writing into the project root |
 | `--force` | Redo a cached transcript, and overwrite a file written by `--save` (otherwise an existing file is kept, since the user may have edited it) |
-| `--recheck` | The user needs names and numbers right in a Whisper or auto-caption transcript. Transcribes the audio again with a second model and writes `recheck.md`; see "Check and fix misheard words" |
+| `--recheck` | The user asks you to check a Whisper or auto-caption transcript for misheard names and numbers. Transcribes the audio again with a second model and writes `recheck.md`; see "Check and fix misheard words" |
 | `--out <dir>` | The user asked to save the transcript in a specific place |
 
 ## Reading the report
 
-- `method`: `subtitles`, `auto-captions`, or `whisper`. Mention it in your reply — auto-captions and Whisper can mishear names and jargon, so the user should know how much to trust exact wording. When exact wording matters, offer `--recheck`.
-- `warnings`: if it lists a possible Whisper loop, tell the user which time range is unreliable instead of quietly using it. The repeated lines stay in the transcript, so leave them out when you quote or summarize that range. Rerunning with `--force` and a different `--model` sometimes helps.
-- `chapters`: when present, use them to structure answers about long videos.
+- `method`: `subtitles`, `auto-captions`, or `whisper`. Mention it in your reply — auto-captions and Whisper can mishear names and jargon, so the user should know how much to trust exact wording. When exact wording matters, offer `--recheck`, and say that it uses tokens (see "Check and fix misheard words").
+- `warnings`: if it lists a possible Whisper loop, tell the user which time range is unreliable. The repeated lines stay in the transcript, so if you later quote or summarize that range, leave them out. Rerunning with `--force` and a different `--model` sometimes helps.
+- `chapters`: not part of the reply. When the user later asks about a long video, they show where each part starts.
 
 ## Check and fix misheard words
 
-Whisper and auto-captions mishear names, numbers, and words that sound alike. When the user wants the transcript accurate (to quote it, keep it, or write notes from it), compare it with a second model:
+Whisper and auto-captions mishear names, numbers, and words that sound alike. When the user asks you to check or fix the transcript, compare it with a second model.
+
+Run this only when the user asks for it. Unlike transcribing, this step has you read `recheck.md` and the transcript, so it uses your tokens in proportion to the video's length. The fixes are your own judgment, so how good they are depends on your model; the transcript the script writes does not.
 
 ```bash
 python3 <this-skill-dir>/scripts/transcribe.py "<url-or-file>" --recheck
 ```
 
-The script transcribes the audio again with a larger model (`whisper-large-v3`) and writes `recheck.md` in the same folder as the transcript. The first run downloads the model (about 3 GB), and the second transcription takes longer than the first: about 7 minutes for a 42-minute video on Apple Silicon. Say so before starting. Transcripts from human-made subtitles are not rechecked.
+The script transcribes the audio again with a larger model (`whisper-large-v3`) and writes `recheck.md` in the same folder as the transcript. The first run downloads the model (about 3 GB), and the second transcription takes longer than the first: about 7 minutes for a 42-minute video on Apple Silicon. Before starting, tell the user about the time, the download, and the tokens this step uses. Transcripts from human-made subtitles are not rechecked.
 
 `recheck.md` has three parts:
 
