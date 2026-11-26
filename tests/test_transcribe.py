@@ -114,11 +114,11 @@ class BuildMarkdownTest(unittest.TestCase):
         }
         md = transcribe.build_markdown(info, ["[00:00:01] a", "[00:00:31] b"])
         front, body = md.split("\n---\n", 1)
-        self.assertTrue(front.startswith("---\ntype: \"reference\"\n"))
+        self.assertTrue(front.startswith("---\ntype: \"Reference\"\n"))
         self.assertIn('title: "Say \\"hi\\""', front)
-        self.assertIn('upload_date: "2026-01-02"', front)
+        self.assertIn('x-video-transcribe-upload_date: "2026-01-02"', front)
         self.assertIn('tags: ["transcript"]', front)
-        self.assertIn("\ntimestamp: ", front)
+        self.assertIn("\ngenerated: ", front)
         self.assertEqual(body, '\n# Say "hi"\n\n## Intro\n\n- [00:00:01] a\n\n## Main\n\n- [00:00:31] b\n')
 
     def test_missing_fields_are_left_out(self):
