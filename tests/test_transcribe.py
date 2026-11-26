@@ -55,7 +55,7 @@ class ParseCuesTest(unittest.TestCase):
             ".vtt",
         )
         self.assertEqual(
-            transcribe.parse_cues(vtt),
+            transcribe.parse_cues(vtt, rolling=True),
             [(1.0, "hello world"), (3.0, "how are you"), (5.0, "fine & you")],
         )
 

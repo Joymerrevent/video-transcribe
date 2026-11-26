@@ -114,13 +114,18 @@ def hms(x: float) -> str:
     return f"{x // 3600:02}:{x % 3600 // 60:02}:{x % 60:02}"
 
 
-def parse_cues(path: str) -> list[tuple[float, str]]:
-    """Parse VTT or SRT into (start_seconds, text), dropping rolling-caption repeats."""
-    return [(start, text) for start, _, text in parse_timed(path)]
+def parse_cues(path: str, rolling: bool = False) -> list[tuple[float, str]]:
+    """Parse VTT or SRT into (start_seconds, text); see parse_timed for rolling."""
+    return [(start, text) for start, _, text in parse_timed(path, rolling)]
 
 
-def parse_timed(path: str) -> list[tuple[float, float, str]]:
-    """Parse VTT or SRT into (start, end, text) in seconds, dropping rolling-caption repeats."""
+def parse_timed(path: str, rolling: bool = False) -> list[tuple[float, float, str]]:
+    """Parse VTT or SRT into (start, end, text) in seconds.
+
+    With rolling, a line that repeats one of the two lines before it is dropped: YouTube
+    auto-captions repeat the previous line in each new cue. Whisper output is read without
+    it, so a line Whisper repeats (a loop, or a real "yes, yes") stays and can be counted.
+    """
     with open(path, encoding="utf-8") as f:
         raw = f.read().replace("\r\n", "\n")
     out: list[tuple[float, float, str]] = []
@@ -135,8 +140,7 @@ def parse_timed(path: str) -> list[tuple[float, float, str]]:
         fresh = []
         for line in lines[cue + 1:]:
             text = html.unescape(re.sub(r"<[^>]+>", "", line)).strip()
-            # YouTube auto-captions repeat the previous line in each new cue.
-            if not text or text in recent:
+            if not text or (rolling and text in recent):
                 continue
             fresh.append(text)
             recent = (recent + [text])[-2:]
@@ -641,7 +645,7 @@ def transcribe(args, source: str, meta: dict, is_file: bool, langs: list[str],
         files = glob.glob(os.path.join(workdir, "subs.*"))
         if not files:
             fail(f"yt-dlp did not write the {lang} {kind}")
-        cues = parse_cues(files[0])
+        cues = parse_cues(files[0], rolling=True)
         info.update(method=kind, language=lang)
     else:
         spoken = args.spoken_lang or (meta.get("language") or "").split("-")[0] or None
