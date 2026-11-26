@@ -130,7 +130,7 @@ class BuildMarkdownTest(unittest.TestCase):
 
 class BackendsTest(unittest.TestCase):
     def test_audio_path_comes_after_end_of_options(self):
-        for cmd, model, build in transcribe.BACKENDS:
+        for cmd, model, _, build in transcribe.BACKENDS:
             args = build("-x.mp3", model, "/tmp/out", "ja")
             self.assertEqual(args[0], cmd)
             self.assertEqual(args[-2:], ["--", "-x.mp3"], cmd)
