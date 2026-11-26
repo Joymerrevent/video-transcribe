@@ -10,7 +10,8 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Python 3.9 has no build for Ubuntu 26.04 (ubuntu-latest since late 2026).
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         # Oldest supported and current Python
