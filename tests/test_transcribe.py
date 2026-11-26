@@ -15,7 +15,7 @@ import types
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-SCRIPT = os.path.join(HERE, "..", "skills", "video-transcribe", "scripts", "transcribe.py")
+SCRIPT = os.path.join(HERE, "..", "plugin", "skills", "video-transcribe", "scripts", "transcribe.py")
 spec = importlib.util.spec_from_file_location("transcribe", SCRIPT)
 transcribe = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(transcribe)
@@ -197,13 +197,13 @@ class VersionTest(unittest.TestCase):
         self.assertEqual(out.stdout, f"video-transcribe {transcribe.VERSION}\n")
 
     def test_plugin_manifests_match(self):
-        with open(os.path.join(HERE, "..", ".claude-plugin", "plugin.json"), encoding="utf-8") as f:
+        with open(os.path.join(HERE, "..", "plugin", ".claude-plugin", "plugin.json"), encoding="utf-8") as f:
             plugin = json.load(f)
         with open(os.path.join(HERE, "..", ".claude-plugin", "marketplace.json"), encoding="utf-8") as f:
             marketplace = json.load(f)
         # Plugin users get a new copy only when this version changes.
         self.assertEqual(plugin["version"], transcribe.VERSION,
-                         "set version in .claude-plugin/plugin.json to VERSION in transcribe.py")
+                         "set version in plugin/.claude-plugin/plugin.json to VERSION in transcribe.py")
         self.assertEqual([p["name"] for p in marketplace["plugins"]], [plugin["name"]])
 
 
