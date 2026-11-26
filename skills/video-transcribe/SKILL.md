@@ -37,7 +37,7 @@ Results are cached under `~/.cache/video-transcribe/<site>-<id>/`, so asking abo
 | `--whisper` | Auto-captions came back but read badly (no punctuation, misheard words) and the user wants better text. Whisper is slower but usually cleaner |
 | `--spoken-lang ja` | Whisper guessed the wrong language (check `language` in the report) |
 | `--model <name>` | A smaller model is needed for speed, e.g. `mlx-community/whisper-small-mlx` |
-| `--save <dir>` | The user wants the transcript kept as a file, e.g. in their project. Writes `<dir>/<site>-<id>.md`: Markdown with OKF (Open Knowledge Format) frontmatter (`type: reference`, title, description, source, method, ...) and the timestamped lines, split by chapter when the video has chapters. Choose the folder from the user's words or the project's conventions (a raw-material or notes folder); ask if it is unclear rather than writing into the project root |
+| `--save <dir>` | The user wants the transcript kept as a file, e.g. in their project. Writes `<dir>/<site>-<id>.md`: Markdown with OKF (Open Knowledge Format) v0.3 frontmatter (`type: Reference`, title, description, the video URL as `resource`, `generated`, and `x-video-transcribe-*` keys such as the method) and the timestamped lines, split by chapter when the video has chapters. Choose the folder from the user's words or the project's conventions (a raw-material or notes folder); ask if it is unclear rather than writing into the project root |
 | `--force` | Redo a cached transcript, and overwrite a file written by `--save` (otherwise an existing file is kept, since the user may have edited it) |
 | `--out <dir>` | The user asked to save the transcript in a specific place |
 
