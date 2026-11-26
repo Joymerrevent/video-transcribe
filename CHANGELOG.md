@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog][keepachangelog], and this project foll
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-26
+
 ### Changed
 
 - The `--save` frontmatter always writes every OKF key that applies to any type: `null` for `verified`, `sources`, `stale_after`, and `superseded_by`, and `status: "stable"`. Keys outside OKF are still written only when they have a value.
@@ -35,6 +37,7 @@ The format is based on [Keep a Changelog][keepachangelog], and this project foll
 
 [keepachangelog]: https://keepachangelog.com/en/1.1.0/
 [semver]: https://semver.org/
-[Unreleased]: https://github.com/Joymerrevent/video-transcribe/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Joymerrevent/video-transcribe/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Joymerrevent/video-transcribe/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Joymerrevent/video-transcribe/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Joymerrevent/video-transcribe/releases/tag/v0.1.0
