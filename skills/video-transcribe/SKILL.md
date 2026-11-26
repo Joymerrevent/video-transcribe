@@ -45,7 +45,7 @@ Results are cached under `~/.cache/video-transcribe/<site>-<id>/`, so asking abo
 ## Reading the report
 
 - `method`: `subtitles`, `auto-captions`, or `whisper`. Mention it in your reply — auto-captions and Whisper can mishear names and jargon, so the user should know how much to trust exact wording. When exact wording matters, offer `--recheck`.
-- `warnings`: if it lists a possible Whisper loop, tell the user which time range is unreliable instead of quietly using it. Rerunning with `--force` and a different `--model` sometimes helps.
+- `warnings`: if it lists a possible Whisper loop, tell the user which time range is unreliable instead of quietly using it. The repeated lines stay in the transcript, so leave them out when you quote or summarize that range. Rerunning with `--force` and a different `--model` sometimes helps.
 - `chapters`: when present, use them to structure answers about long videos.
 
 ## Check and fix misheard words
