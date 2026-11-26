@@ -9,7 +9,7 @@
     {
       "name": "video-transcribe",
       "source": "./plugin",
-      "description": "Turn a video into a timestamped transcript, using its subtitles or local Whisper speech recognition. Transcribing uses no AI tokens, and its accuracy does not depend on the AI model; the agent reads the transcript only when you ask about the video."
+      "description": "Turn a video into a timestamped transcript, using its subtitles or local Whisper speech recognition. Transcribing uses no AI tokens, and its accuracy does not depend on the AI model; the agent reads the transcript only when you ask about the video, so the tokens it uses for a transcription do not depend on the video's length."
     }
   ]
 }

@@ -5,6 +5,7 @@ An agent skill that turns a video into a timestamped text transcript. [日本語
 - Works with YouTube and any other site [yt-dlp][yt-dlp] supports, plus local audio and video files.
 - Uses the platform's subtitles when they exist. When they don't, it downloads the audio only and transcribes it locally with Whisper.
 - The transcription itself uses no AI tokens. The agent only runs the script and reads its short report: the title, how the video was transcribed, where the transcript is, and any warnings. The agent reads the transcript only when you ask about the video.
+- The tokens the agent uses for a transcription do not depend on the video's length. Because the agent does not read the transcript while transcribing, an 8-hour video uses about as many tokens as a 19-second one.
 - Transcription accuracy does not depend on the AI model the agent uses. It comes from the video's subtitles or from Whisper, a speech recognition model that runs on your computer.
 - The script sends nothing to an external API. Only yt-dlp and the one-time Whisper model download use the network.
 - One Python script with no Python dependencies. It does not summarize; when you ask about the video, the agent reads the transcript and answers in whatever form you ask for.
@@ -89,6 +90,7 @@ The approach is based on the `watch-video` skill in [coreyhaines31/makerskills][
 - YouTube のほか、[yt-dlp][yt-dlp] が対応しているサイトの動画と、手元の音声・動画ファイルを文字に起こせます。
 - 動画に字幕があれば字幕を使います。字幕がなければ音声だけをダウンロードし、手元の PC で Whisper を使って文字に起こします。
 - 文字起こしの処理そのものでは、AI のトークンを使いません。エージェントは、スクリプトを実行して短い報告（タイトル・文字起こしの方法・文字起こしの保存場所・警告）を読むだけです。エージェントが文字起こしを読むのは、動画について質問したときだけです。
+- 文字起こしで AI が使うトークンは、動画の長さに左右されません。文字起こしの間、エージェントは文字起こしを読まないので、8 時間の動画でも 19 秒の動画とほぼ同じトークンで済みます。
 - 文字起こしの精度は、エージェントが使っている AI のモデルに左右されません。精度は、動画の字幕か、手元の PC で動く音声認識のモデル（Whisper）で決まります。
 - スクリプトは、音声や文字起こしを外部の API に送りません。ネットワークを使うのは、yt-dlp と、初回の Whisper のモデルのダウンロードだけです。
 - 中身は Python のスクリプト 1 本で、追加の Python パッケージは要りません。要約はしません。動画について質問すると、エージェントが文字起こしを読み、頼まれた形で答えます。
