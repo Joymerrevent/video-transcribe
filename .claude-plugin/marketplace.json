@@ -1,0 +1,14 @@
+{
+  "name": "joymerrevent",
+  "owner": {
+    "name": "Joymerrevent",
+    "url": "https://joymerrevent.com/"
+  },
+  "plugins": [
+    {
+      "name": "video-transcribe",
+      "source": "./",
+      "description": "Turn a video into a timestamped transcript, using its subtitles or local Whisper."
+    }
+  ]
+}
