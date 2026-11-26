@@ -8,6 +8,7 @@ import json
 import os
 import pathlib
 import re
+import subprocess
 import sys
 import tempfile
 import types
@@ -189,6 +190,11 @@ class VersionTest(unittest.TestCase):
             self.skipTest("no release in CHANGELOG.md yet")
         self.assertEqual(transcribe.VERSION, releases[0],
                          "bump VERSION in transcribe.py when adding a release to CHANGELOG.md")
+
+    def test_version_option(self):
+        out = subprocess.run([sys.executable, SCRIPT, "--version"], capture_output=True, text=True)
+        self.assertEqual(out.returncode, 0)
+        self.assertEqual(out.stdout, f"video-transcribe {transcribe.VERSION}\n")
 
 
 class BackendsTest(unittest.TestCase):

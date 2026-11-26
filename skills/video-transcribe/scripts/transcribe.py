@@ -569,6 +569,7 @@ def main() -> None:
     ap.add_argument("--recheck", action="store_true",
                     help="also transcribe with a second, larger Whisper model and write recheck.md, "
                          "which lays the two side by side to find misheard words")
+    ap.add_argument("--version", action="version", version=f"video-transcribe {VERSION}")
     args = ap.parse_args()
     langs = [l.strip() for l in args.lang.split(",") if l.strip()]
     # `uv tool install` / `pipx install` put commands here, which is often not on PATH.
