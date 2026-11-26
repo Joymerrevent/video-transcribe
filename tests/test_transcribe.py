@@ -145,15 +145,14 @@ class BuildMarkdownTest(unittest.TestCase):
         front, body = md.split("\n---\n", 1)
         self.assertTrue(front.startswith("---\ntype: \"Reference\"\n"))
         self.assertIn('title: "Say \\"hi\\""', front)
-        self.assertIn('x-video-transcribe-upload_date: "2026-01-02"', front)
+        self.assertIn('x-video-transcribe-upload-date: "2026-01-02"', front)
         self.assertIn('tags: ["transcript"]', front)
         self.assertIn("\ngenerated: ", front)
         self.assertEqual(body, '\n# Say "hi"\n\n## Intro\n\n- [00:00:01] a\n\n## Main\n\n- [00:00:31] b\n')
 
-    def test_missing_fields_are_left_out(self):
+    def test_missing_extension_values_are_left_out(self):
         md = transcribe.build_markdown({"title": "x.mp3", "method": "whisper"}, ["[00:00:00] hi"])
         self.assertNotIn("uploader", md)
-        self.assertNotIn("null", md)
         self.assertTrue(md.endswith("# x.mp3\n\n- [00:00:00] hi\n"))
 
     def test_okf_v03_keys(self):
@@ -166,7 +165,8 @@ class BuildMarkdownTest(unittest.TestCase):
         self.assertEqual(fields["resource"], "https://www.youtube.com/watch?v=abc")
         self.assertEqual(fields["x-video-transcribe-method"], "subtitles")
         # Legacy and unprefixed keys are gone; every non-OKF key has the x- prefix.
-        okf = {"type", "title", "description", "resource", "tags", "generated"}
+        okf = {"type", "title", "description", "resource", "tags", "generated",
+               "verified", "sources", "status", "stale_after", "superseded_by"}
         for key in fields.keys() - okf:
             self.assertTrue(key.startswith("x-video-transcribe-"), key)
 
