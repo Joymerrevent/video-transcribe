@@ -26,7 +26,7 @@ import subprocess
 import sys
 import unicodedata
 
-VERSION = "0.3.0"  # bump on each release; a test checks it against CHANGELOG.md
+VERSION = "0.4.0"  # bump on each release; a test checks it against CHANGELOG.md
 DEFAULT_OUT = os.path.join(
     os.environ.get("XDG_CACHE_HOME", os.path.expanduser("~/.cache")), "video-transcribe"
 )

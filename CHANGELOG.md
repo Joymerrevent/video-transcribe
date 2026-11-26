@@ -5,6 +5,8 @@ The format is based on [Keep a Changelog][keepachangelog], and this project foll
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-27
+
 ### Changed
 
 - After transcribing, the agent no longer reads the transcript file, so the tokens it uses for a transcription no longer grow with the video's length. It reads the file only when you ask about the video, and decides then whether to read the whole file or only the parts it needs. Its reply after transcribing gives only the title, the method, where the transcript is, and any warnings.
@@ -42,7 +44,8 @@ The format is based on [Keep a Changelog][keepachangelog], and this project foll
 
 [keepachangelog]: https://keepachangelog.com/en/1.1.0/
 [semver]: https://semver.org/
-[Unreleased]: https://github.com/Joymerrevent/video-transcribe/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Joymerrevent/video-transcribe/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/Joymerrevent/video-transcribe/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Joymerrevent/video-transcribe/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/Joymerrevent/video-transcribe/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Joymerrevent/video-transcribe/releases/tag/v0.1.0
