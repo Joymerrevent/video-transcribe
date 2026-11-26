@@ -1,7 +1,7 @@
 {
   "name": "video-transcribe",
   "version": "0.3.0",
-  "description": "Turn a video into a timestamped transcript: YouTube, any site yt-dlp supports, or a local file. Uses the video's subtitles or local Whisper, and uploads nothing.",
+  "description": "Turn a video into a timestamped transcript: YouTube, any site yt-dlp supports, or a local file. Uses the video's subtitles or local Whisper speech recognition, so transcribing uploads nothing and uses no AI tokens, and its accuracy does not depend on the AI model. The agent reads the transcript only when you ask about the video.",
   "author": {
     "name": "Joymerrevent",
     "url": "https://joymerrevent.com/"
