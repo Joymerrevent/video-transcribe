@@ -1,6 +1,10 @@
 """Unit tests for the pure functions in transcribe.py (no network, no Whisper)."""
+import datetime
 import importlib.util
+import json
 import os
+import pathlib
+import re
 import tempfile
 import unittest
 
@@ -23,6 +27,12 @@ def write(text: str, suffix: str) -> str:
     with os.fdopen(fd, "w", encoding="utf-8") as f:
         f.write(text)
     return path
+
+
+def frontmatter(md: str) -> dict:
+    """Read back the frontmatter, whose values build_markdown writes as JSON."""
+    block = md.split("---\n")[1]
+    return {k: json.loads(v) for k, v in (line.split(": ", 1) for line in block.splitlines())}
 
 
 class ParseCuesTest(unittest.TestCase):
@@ -126,6 +136,41 @@ class BuildMarkdownTest(unittest.TestCase):
         self.assertNotIn("uploader", md)
         self.assertNotIn("null", md)
         self.assertTrue(md.endswith("# x.mp3\n\n- [00:00:00] hi\n"))
+
+    def test_okf_v03_keys(self):
+        info = {"source": "https://youtu.be/abc?si=x", "url": "https://www.youtube.com/watch?v=abc",
+                "title": "t", "uploader": "me", "method": "subtitles", "language": "en"}
+        fields = frontmatter(transcribe.build_markdown(info, ["[00:00:00] hi"]))
+        self.assertEqual(fields["generated"]["by"], "video-transcribe/" + transcribe.VERSION)
+        at = datetime.datetime.fromisoformat(fields["generated"]["at"])
+        self.assertIsNotNone(at.tzinfo)  # OKF v0.3 §5: a date-time needs an offset
+        self.assertEqual(fields["resource"], "https://www.youtube.com/watch?v=abc")
+        self.assertEqual(fields["x-video-transcribe-method"], "subtitles")
+        # Legacy and unprefixed keys are gone; every non-OKF key has the x- prefix.
+        okf = {"type", "title", "description", "resource", "tags", "generated"}
+        for key in fields.keys() - okf:
+            self.assertTrue(key.startswith("x-video-transcribe-"), key)
+
+    def test_local_file_resource_is_a_file_uri(self):
+        path = os.path.join(TMP.name, "my talk.mp4")
+        fields = frontmatter(transcribe.build_markdown({"source": path, "title": "my talk.mp4"}, []))
+        self.assertEqual(fields["resource"], pathlib.Path(path).as_uri())
+        self.assertTrue(fields["resource"].endswith("/my%20talk.mp4"))
+
+    def test_resource_falls_back_to_source_url(self):
+        # info.json cached by an older version has no "url".
+        fields = frontmatter(transcribe.build_markdown({"source": "https://example.com/v"}, []))
+        self.assertEqual(fields["resource"], "https://example.com/v")
+
+
+class VersionTest(unittest.TestCase):
+    def test_version_matches_latest_release_in_changelog(self):
+        with open(os.path.join(HERE, "..", "CHANGELOG.md"), encoding="utf-8") as f:
+            releases = re.findall(r"^## \[(\d+\.\d+\.\d+)\]", f.read(), re.M)
+        if not releases:
+            self.skipTest("no release in CHANGELOG.md yet")
+        self.assertEqual(transcribe.VERSION, releases[0],
+                         "bump VERSION in transcribe.py when adding a release to CHANGELOG.md")
 
 
 class BackendsTest(unittest.TestCase):
