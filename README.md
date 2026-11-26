@@ -13,6 +13,12 @@ An agent skill that turns a video into a timestamped text transcript. [日本語
 npx skills add Joymerrevent/video-transcribe
 ```
 
+This installs the latest code on `main`. To install a released version, add its tag. The versions are listed on the [Releases][releases] page.
+
+```bash
+npx skills add Joymerrevent/video-transcribe@<tag> --skill video-transcribe
+```
+
 Then install the tools the script calls:
 
 ```bash
@@ -37,7 +43,7 @@ The agent runs `scripts/transcribe.py` and reads the transcript. You can also ru
 python3 skills/video-transcribe/scripts/transcribe.py "<url-or-file>" [--lang ja,en] [--whisper]
 ```
 
-Run it with `--help` for all options. Transcripts are cached in `~/.cache/video-transcribe/`. The script prints only a short JSON report, never the whole transcript.
+Run it with `--help` for all options and `--version` for the version. Transcripts are cached in `~/.cache/video-transcribe/`. The script prints only a short JSON report, never the whole transcript.
 
 To keep the transcript in your project, add `--save <dir>` (or tell the agent where to save it). It writes `<dir>/<site>-<id>.md`, a Markdown file with [OKF][okf] v0.3 frontmatter (`type: Reference`, title, the video URL as `resource`, and so on) and the timestamped lines, split by chapter when the video has chapters. An existing file is kept unless you add `--force`.
 
@@ -59,6 +65,13 @@ python3 -m unittest discover -s tests -v
 ```
 
 CI runs the same tests on Python 3.9 and 3.13. Report security issues as described in [SECURITY.md][security].
+
+### Releasing
+
+Versions follow [Semantic Versioning][semver], and each release is tagged `vX.Y.Z`.
+
+1. In a pull request, move the entries under `[Unreleased]` in [CHANGELOG.md][changelog] into a new `[X.Y.Z]` section, and set `VERSION` in `skills/video-transcribe/scripts/transcribe.py` to the same number. The tests fail if the two numbers differ.
+2. After the pull request is merged, tag the merge commit `vX.Y.Z` and publish a GitHub release from that tag, with the new CHANGELOG section as the release notes.
 
 ## Credits
 
@@ -85,6 +98,12 @@ The approach is based on the `watch-video` skill in [coreyhaines31/makerskills][
 npx skills add Joymerrevent/video-transcribe
 ```
 
+この方法では、`main` の最新のコードが入ります。リリースした版を入れるときは、版のタグを付けます。版の一覧は [Releases][releases] のページにあります。
+
+```bash
+npx skills add Joymerrevent/video-transcribe@<タグ> --skill video-transcribe
+```
+
 スクリプトが使うツールも入れます。
 
 ```bash
@@ -109,7 +128,7 @@ Whisper は、字幕のない動画と手元のファイルを文字に起こす
 python3 skills/video-transcribe/scripts/transcribe.py "<URL かファイル>" [--lang ja,en] [--whisper]
 ```
 
-すべてのオプションは `--help` で確かめられます。文字起こしは `~/.cache/video-transcribe/` に保存され、同じ動画をもう一度頼むとすぐに返します。スクリプトが画面に出すのは短い報告（JSON）だけで、文字起こしの全文は出しません。
+すべてのオプションは `--help` で、版は `--version` で確かめられます。文字起こしは `~/.cache/video-transcribe/` に保存され、同じ動画をもう一度頼むとすぐに返します。スクリプトが画面に出すのは短い報告（JSON）だけで、文字起こしの全文は出しません。
 
 文字起こしをプロジェクトに残したいときは、`--save <フォルダ>` を付けます（エージェントに保存先を伝えても同じです）。`<フォルダ>/<サイト>-<ID>.md` に、[OKF][okf] v0.3 のフロントマター（`type: Reference`・タイトル・`resource` に入れた動画の URL など）と時刻付きの文字起こしを書いた Markdown を作ります。動画に章があれば、章ごとに見出しで区切ります。同じ名前のファイルがあるときは上書きしません。上書きするときは `--force` を付けます。
 
@@ -132,6 +151,13 @@ python3 -m unittest discover -s tests -v
 
 CI でも、Python 3.9 と 3.13 で同じテストを実行します。セキュリティの問題の報告のしかたは [SECURITY.md][security] を見てください。
 
+#### リリースのしかた
+
+版の番号は[セマンティック バージョニング][semver-ja]に従い、リリースごとに `vX.Y.Z` のタグを付けます。
+
+1. プルリクエストで、[CHANGELOG.md][changelog] の `[Unreleased]` の項目を新しい `[X.Y.Z]` の節に移し、`skills/video-transcribe/scripts/transcribe.py` の `VERSION` を同じ番号にします。2 つの番号が食い違うと、テストが落ちます。
+2. プルリクエストをマージしたら、マージのコミットに `vX.Y.Z` のタグを付け、そのタグから GitHub のリリースを公開します。リリースノートには、CHANGELOG の新しい節を使います。
+
 ### クレジット
 
 [coreyhaines31/makerskills][makerskills]（MIT ライセンス）の `watch-video` スキルをもとに、文字起こしの機能だけに絞って作りました。
@@ -146,3 +172,7 @@ CI でも、Python 3.9 と 3.13 で同じテストを実行します。セキュ
 [license]: LICENSE
 [okf]: https://github.com/open-knowledge-format/open-knowledge-format/blob/main/SPEC.md
 [security]: SECURITY.md
+[releases]: https://github.com/Joymerrevent/video-transcribe/releases
+[changelog]: CHANGELOG.md
+[semver]: https://semver.org/
+[semver-ja]: https://semver.org/lang/ja/
