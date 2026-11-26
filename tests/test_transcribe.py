@@ -40,6 +40,10 @@ def frontmatter(md: str) -> dict:
     return {k: json.loads(v) for k, v in (line.split(": ", 1) for line in block.splitlines())}
 
 
+# Whisper looping: the same line 12 times in a row.
+LOOP_SRT = "".join(f"{i + 1}\n00:00:{i:02},000 --> 00:00:{i + 1:02},000\nYep.\n\n" for i in range(12))
+
+
 class ParseCuesTest(unittest.TestCase):
     def test_rolling_auto_captions_are_deduplicated(self):
         vtt = write(
@@ -69,6 +73,15 @@ class ParseCuesTest(unittest.TestCase):
             transcribe.parse_cues(srt),
             [(62.5, "first line second line"), (3600.0, "日本語の字幕です")],
         )
+
+
+    def test_whisper_output_keeps_repeated_lines(self):
+        srt = write(LOOP_SRT + "13\n00:00:13,000 --> 00:00:14,000\nはい\n\n"
+                    "14\n00:00:14,000 --> 00:00:15,000\nはい\n", ".srt")
+        cues = transcribe.parse_cues(srt)
+        self.assertEqual(len(cues), 14)
+        self.assertEqual(cues[-2:], [(13.0, "はい"), (14.0, "はい")])
+        self.assertEqual(len(transcribe.parse_cues(srt, rolling=True)), 2)
 
 
 class FindLoopsTest(unittest.TestCase):
@@ -293,8 +306,12 @@ with open(os.environ["FAKE_LOG"], "a") as f:
 # The full run "drops" everything after 14 seconds; a clip has one line.
 cues = [(0, 3, "clip line")] if audio.endswith("clip.wav") else [(0, 4, "first"), (10, 14, "1本400から500ドル")]
 with open(os.path.join(out, "whisper.srt"), "w") as f:
-    for i, (s, e, x) in enumerate(cues, 1):
-        f.write(f"{i}\\n00:00:{s:02},000 --> 00:00:{e:02},000\\n{x}\\n\\n")
+    if os.environ.get("FAKE_SRT"):  # a test gives the SRT to print
+        with open(os.environ["FAKE_SRT"], encoding="utf-8") as src:
+            f.write(src.read())
+    else:
+        for i, (s, e, x) in enumerate(cues, 1):
+            f.write(f"{i}\\n00:00:{s:02},000 --> 00:00:{e:02},000\\n{x}\\n\\n")
 """
 FAKE_FFMPEG = """\
 import os, sys
@@ -302,16 +319,26 @@ with open(os.environ["FAKE_LOG"], "a") as f:
     f.write("ffmpeg " + " ".join(sys.argv[1:]) + "\\n")
 open(sys.argv[-1], "w").close()
 """
+FAKE_YTDLP = """\
+import os, sys
+args = sys.argv[1:]
+with open(os.environ["FAKE_LOG"], "a") as f:
+    f.write("yt-dlp " + " ".join(args) + "\\n")
+# Rolling auto-captions: each cue repeats the line before it.
+with open(args[args.index("-o") + 1].replace("%(ext)s", "vtt"), "w") as f:
+    f.write("WEBVTT\\n\\n00:00:01.000 --> 00:00:03.000\\nhello\\n\\n"
+            "00:00:03.000 --> 00:00:05.000\\nhello\\nworld\\n")
+"""
 
 
 class RecheckTest(unittest.TestCase):
-    """recheck() with fake mlx_whisper and ffmpeg commands on PATH."""
+    """transcribe() and recheck() with fake mlx_whisper, ffmpeg, and yt-dlp commands on PATH."""
 
     def setUp(self):
         self.dir = tempfile.mkdtemp(dir=TMP.name)
         bindir = os.path.join(self.dir, "bin")
         os.mkdir(bindir)
-        for name, body in [("mlx_whisper", FAKE_WHISPER), ("ffmpeg", FAKE_FFMPEG)]:
+        for name, body in [("mlx_whisper", FAKE_WHISPER), ("ffmpeg", FAKE_FFMPEG), ("yt-dlp", FAKE_YTDLP)]:
             path = os.path.join(bindir, name)
             with open(path, "w", encoding="utf-8") as f:
                 f.write(f"#!{sys.executable}\n{body}")
@@ -364,6 +391,29 @@ class RecheckTest(unittest.TestCase):
             raise AssertionError("the cached second transcript needs no audio")
         self.assertEqual(self.recheck(info, no_audio)["numbers_differ"], 1)
         self.assertEqual(self.calls(), [])
+
+    def test_whisper_loops_are_warned_in_both_transcripts(self):
+        os.environ["FAKE_SRT"] = write(LOOP_SRT, ".srt")
+        args = types.SimpleNamespace(whisper=False, model=None, spoken_lang=None)
+        with contextlib.redirect_stderr(io.StringIO()):
+            info = transcribe.transcribe(args, "/media/talk.mp3", {"title": "talk.mp3"}, True, ["en"],
+                                         lambda: "/media/talk.mp3", self.dir, self.txt)
+        self.assertEqual(info["lines"], 12)
+        self.assertEqual(len(info["warnings"]), 1)
+        self.assertIn("x12", info["warnings"][0])
+        self.assertEqual(len(self.recheck(info)["warnings"]), 1)
+        # Every line of the first has the second's loop around it, so nothing is cut out again.
+        self.assertEqual([c for c in self.calls() if c.startswith("ffmpeg")], [])
+
+    def test_auto_captions_still_drop_rolling_repeats(self):
+        args = types.SimpleNamespace(whisper=False, model=None, spoken_lang=None)
+        meta = {"title": "t", "language": "en", "subtitles": {}, "automatic_captions": {"en-orig": []}}
+        with contextlib.redirect_stderr(io.StringIO()):
+            info = transcribe.transcribe(args, "https://example.com/v", meta, False, ["en"],
+                                         lambda: self.fail("captions need no audio"), self.dir, self.txt)
+        self.assertEqual(info["method"], "auto-captions")
+        with open(self.txt, encoding="utf-8") as f:
+            self.assertEqual(f.read(), "[00:00:01] hello\n[00:00:03] world\n")
 
     def test_human_subtitles_are_not_rechecked(self):
         with self.assertRaises(SystemExit):
