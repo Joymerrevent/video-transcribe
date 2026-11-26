@@ -64,14 +64,7 @@ Auto-translated captions are never used, because they are a machine translation 
 python3 -m unittest discover -s tests -v
 ```
 
-CI runs the same tests on Python 3.9 and 3.13. Report security issues as described in [SECURITY.md][security].
-
-### Releasing
-
-Versions follow [Semantic Versioning][semver], and each release is tagged `vX.Y.Z`.
-
-1. In a pull request, move the entries under `[Unreleased]` in [CHANGELOG.md][changelog] into a new `[X.Y.Z]` section, and set `VERSION` in `skills/video-transcribe/scripts/transcribe.py` to the same number. The tests fail if the two numbers differ.
-2. After the pull request is merged, tag the merge commit `vX.Y.Z` and publish a GitHub release from that tag, with the new CHANGELOG section as the release notes.
+CI runs the same tests on Python 3.9 and 3.13. Report security issues as described in [SECURITY.md][security]. To publish a new version, follow [docs/releasing.md][releasing].
 
 ## Credits
 
@@ -149,14 +142,7 @@ Whisper と自動生成の字幕は、人名や数字を聞き違えることが
 python3 -m unittest discover -s tests -v
 ```
 
-CI でも、Python 3.9 と 3.13 で同じテストを実行します。セキュリティの問題の報告のしかたは [SECURITY.md][security] を見てください。
-
-#### リリースのしかた
-
-版の番号は[セマンティック バージョニング][semver-ja]に従い、リリースごとに `vX.Y.Z` のタグを付けます。
-
-1. プルリクエストで、[CHANGELOG.md][changelog] の `[Unreleased]` の項目を新しい `[X.Y.Z]` の節に移し、`skills/video-transcribe/scripts/transcribe.py` の `VERSION` を同じ番号にします。2 つの番号が食い違うと、テストが落ちます。
-2. プルリクエストをマージしたら、マージのコミットに `vX.Y.Z` のタグを付け、そのタグから GitHub のリリースを公開します。リリースノートには、CHANGELOG の新しい節を使います。
+CI でも、Python 3.9 と 3.13 で同じテストを実行します。セキュリティの問題の報告のしかたは [SECURITY.md][security] を見てください。新しい版を公開する手順は [docs/releasing.md][releasing] にあります。
 
 ### クレジット
 
@@ -172,7 +158,5 @@ CI でも、Python 3.9 と 3.13 で同じテストを実行します。セキュ
 [license]: LICENSE
 [okf]: https://github.com/open-knowledge-format/open-knowledge-format/blob/main/SPEC.md
 [security]: SECURITY.md
+[releasing]: docs/releasing.md
 [releases]: https://github.com/Joymerrevent/video-transcribe/releases
-[changelog]: CHANGELOG.md
-[semver]: https://semver.org/
-[semver-ja]: https://semver.org/lang/ja/
