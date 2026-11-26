@@ -39,13 +39,80 @@ Results are cached under `~/.cache/video-transcribe/<site>-<id>/`, so asking abo
 | `--model <name>` | A smaller model is needed for speed, e.g. `mlx-community/whisper-small-mlx` |
 | `--save <dir>` | The user wants the transcript kept as a file, e.g. in their project. Writes `<dir>/<site>-<id>.md`: Markdown with OKF (Open Knowledge Format) frontmatter (`type: reference`, title, description, source, method, ...) and the timestamped lines, split by chapter when the video has chapters. Choose the folder from the user's words or the project's conventions (a raw-material or notes folder); ask if it is unclear rather than writing into the project root |
 | `--force` | Redo a cached transcript, and overwrite a file written by `--save` (otherwise an existing file is kept, since the user may have edited it) |
+| `--recheck` | The user needs names and numbers right in a Whisper or auto-caption transcript. Transcribes the audio again with a second model and writes `recheck.md`; see "Check and fix misheard words" |
 | `--out <dir>` | The user asked to save the transcript in a specific place |
 
 ## Reading the report
 
-- `method`: `subtitles`, `auto-captions`, or `whisper`. Mention it in your reply — auto-captions and Whisper can mishear names and jargon, so the user should know how much to trust exact wording.
+- `method`: `subtitles`, `auto-captions`, or `whisper`. Mention it in your reply — auto-captions and Whisper can mishear names and jargon, so the user should know how much to trust exact wording. When exact wording matters, offer `--recheck`.
 - `warnings`: if it lists a possible Whisper loop, tell the user which time range is unreliable instead of quietly using it. Rerunning with `--force` and a different `--model` sometimes helps.
 - `chapters`: when present, use them to structure answers about long videos.
+
+## Check and fix misheard words
+
+Whisper and auto-captions mishear names, numbers, and words that sound alike. When the user wants the transcript accurate (to quote it, keep it, or write notes from it), compare it with a second model:
+
+```bash
+python3 <this-skill-dir>/scripts/transcribe.py "<url-or-file>" --recheck
+```
+
+The script transcribes the audio again with a larger model (`whisper-large-v3`) and writes `recheck.md` in the same folder as the transcript. The first run downloads the model (about 3 GB), and the second transcription takes longer than the first: about 7 minutes for a 42-minute video on Apple Silicon. Say so before starting. Transcripts from human-made subtitles are not rechecked.
+
+`recheck.md` has three parts:
+
+- **Numbers that differ**: lines where one transcript has a number that the other does not have around the same time. Two ways of writing the same number (9万7千 and 9万7000) are not listed.
+- **Not covered by the second transcript**: time ranges where the second model wrote nothing, so it cannot confirm or question those lines.
+- **Side by side**: every line of the first transcript, with the lines of the second nested under it. Use it to look up any spot you doubt.
+
+Then:
+
+1. Go through "Numbers that differ".
+2. Read the transcript (reading the side by side shows both models at once) and look up anything that seems wrong: names, numbers, words that do not fit.
+3. Decide each spot with the rules below, and edit `transcript.txt` (the file at `transcript` in the report). Keep the `[hh:mm:ss]` at the start of each line.
+4. Record each fix, and each spot you could not decide, in `corrections.md` in the same folder (format below).
+5. Run the same command with `--recheck` again. It reuses both transcripts, so it takes seconds, and rewrites `recheck.md` against the fixed transcript.
+
+Do not pass `--force` after fixing: it transcribes again and discards the fixes. If the transcript was saved with `--save` before you fixed it, make the same fixes in the saved file too.
+
+### Rules for deciding
+
+1. **Misheard sounds** (a number, a name, or a different word): fix only when the second model heard something different and the context agrees with it. When both models heard the same number, or the same word and it makes sense, take it as what was said and leave it.
+2. **The wrong kanji for the right sound** (連鉄 for 錬鉄, 戦車 for 洗車) and **words that make no sense** (初期洗い機 for 食器洗い機): both models often make the same mistake. Fix only when exactly one word sounds close and fits the context.
+3. **Names of people in the video**: when the context makes clear who is meant, use the spelling that most of the transcript uses, even if both models agree on another one.
+4. When you cannot decide, leave the text as it is. Do not fill in from knowledge outside the video.
+5. When several videos share scenes (a full episode and its digest), write the same words the same way in all of them. Build the list of spellings as you go, and use it for every video.
+
+Watch for these:
+
+- The second model sometimes invents sentences over silence or music (「ご視聴ありがとうございました」, 「次回予告」). Use a line from it as evidence only when the lines around it match the first transcript.
+- A comma in a number may stand for 、: 「4,500ドル」 can mean 400 to 500 dollars (4、500), and 「4,5本」 or 「3,4年」 means four or five (4、5本), three or four.
+- The two models place the same words a few seconds apart. `recheck.md` already compares each line with the second transcript from 8 seconds before to 12 seconds after it.
+
+### Record
+
+Write `corrections.md` like this. Times are those of the lines in `transcript.txt`.
+
+```markdown
+## Fixed
+
+| Time | Before | After | Reason |
+|---|---|---|---|
+| [00:12:34] | あれじゃい | RJ | Rule 3: the same person is called RJ in the rest of the video |
+
+## Left as is
+
+| Time | Text | Why |
+|---|---|---|
+| [00:20:15] | 3か月 | The second model heard 3週間, and the context fits both |
+
+## Spellings
+
+| Heard as | Written as | When |
+|---|---|---|
+| 連鉄 | 錬鉄 | When it means the iron material |
+```
+
+When several videos are checked together, keep one "Spellings" list and copy it into each video's record.
 
 ## Before running
 

@@ -41,6 +41,8 @@ Run it with `--help` for all options. Transcripts are cached in `~/.cache/video-
 
 To keep the transcript in your project, add `--save <dir>` (or tell the agent where to save it). It writes `<dir>/<site>-<id>.md`, a Markdown file with [OKF][okf] frontmatter (`type: reference`, title, source, and so on) and the timestamped lines, split by chapter when the video has chapters. An existing file is kept unless you add `--force`.
 
+Whisper and auto-generated captions can mishear names and numbers. To check them, add `--recheck` (or ask the agent to check the transcript). The script transcribes the audio again with a larger Whisper model and writes `recheck.md`, which puts the two transcripts side by side and lists the lines where their numbers differ. The agent then fixes the spots it can decide from the two transcripts and the context, and records each fix. The larger model is downloaded on first use (about 3 GB). Transcripts from human-made subtitles are not rechecked.
+
 ## How subtitles are chosen
 
 1. Human-made subtitles in a preferred language (`--lang`, default `en`)
@@ -110,6 +112,8 @@ python3 skills/video-transcribe/scripts/transcribe.py "<URL かファイル>" [-
 すべてのオプションは `--help` で確かめられます。文字起こしは `~/.cache/video-transcribe/` に保存され、同じ動画をもう一度頼むとすぐに返します。スクリプトが画面に出すのは短い報告（JSON）だけで、文字起こしの全文は出しません。
 
 文字起こしをプロジェクトに残したいときは、`--save <フォルダ>` を付けます（エージェントに保存先を伝えても同じです）。`<フォルダ>/<サイト>-<ID>.md` に、[OKF][okf] のフロントマター（`type: reference`・タイトル・元の URL など）と時刻付きの文字起こしを書いた Markdown を作ります。動画に章があれば、章ごとに見出しで区切ります。同じ名前のファイルがあるときは上書きしません。上書きするときは `--force` を付けます。
+
+Whisper と自動生成の字幕は、人名や数字を聞き違えることがあります。確かめたいときは `--recheck` を付けます（エージェントに「聞き違いを確かめて」と頼んでも同じです）。スクリプトは大きいほうの Whisper のモデルで音声をもう一度文字に起こし、2 つの文字起こしを並べた `recheck.md` を作ります。`recheck.md` には、数字が食い違う行の一覧も入ります。エージェントは、2 つの文字起こしと前後の文脈で決められる箇所を直し、直したことを記録します。大きいほうのモデルは、初めて使うときにダウンロードします（約 3 GB）。人が作った字幕の文字起こしは、確かめる対象にしません。
 
 ### 字幕の選び方
 
