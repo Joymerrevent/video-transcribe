@@ -25,7 +25,7 @@ In Claude Code 2.1.275 or later, you can install it as a plugin instead:
 /plugin install video-transcribe --marketplace Joymerrevent/video-transcribe
 ```
 
-To get a new version later, run `claude plugin update video-transcribe@joymerrevent`. Use one of these ways, not both: each way installs its own copy of the skill.
+To get a new version later, run `claude plugin update video-transcribe@video-transcribe`. Use one of these ways, not both: each way installs its own copy of the skill.
 
 Then install the tools the script calls:
 
@@ -107,7 +107,7 @@ Claude Code 2.1.275 以降では、代わりにプラグインとして入れる
 /plugin install video-transcribe --marketplace Joymerrevent/video-transcribe
 ```
 
-新しい版が出たら、`claude plugin update video-transcribe@joymerrevent` で更新します。入れ方はどちらか 1 つにしてください。両方で入れると、同じスキルが 2 つ入ります。
+新しい版が出たら、`claude plugin update video-transcribe@video-transcribe` で更新します。入れ方はどちらか 1 つにしてください。両方で入れると、同じスキルが 2 つ入ります。
 
 スクリプトが使うツールも入れます。
 
