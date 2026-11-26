@@ -8,7 +8,7 @@
 
 1. 次の変更をするプルリクエストを作ります。
    - [CHANGELOG.md][changelog] の `[Unreleased]` の項目を、新しい `## [X.Y.Z] - YYYY-MM-DD` の節に移し、ファイルの末尾のリンクを直す
-   - `skills/video-transcribe/scripts/transcribe.py` の `VERSION` と、`.claude-plugin/plugin.json` の `version` を同じ番号にする。番号が食い違うと、テストが落ちる。プラグインの利用者は、`plugin.json` の `version` が上がったときに新しい版を受け取る
+   - `plugin/skills/video-transcribe/scripts/transcribe.py` の `VERSION` と、`plugin/.claude-plugin/plugin.json` の `version` を同じ番号にする。番号が食い違うと、テストが落ちる。プラグインの利用者は、`plugin.json` の `version` が上がったときに新しい版を受け取る
 2. プルリクエストをマージし、`main` の CI が通るのを待ちます。
 3. マージのコミットに署名付きのタグを付け、タグを push します。CHANGELOG の節の日付から日がずれたときは、先にプルリクエストで日付を直します。
 

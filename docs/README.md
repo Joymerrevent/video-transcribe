@@ -8,11 +8,13 @@
 
 | パス | 中身 |
 |---|---|
-| `skills/video-transcribe/` | 利用者が入れるスキル |
-| `skills/video-transcribe/SKILL.md` | エージェントへの指示 |
-| `skills/video-transcribe/scripts/transcribe.py` | エージェントが実行するスクリプト。Python の標準ライブラリだけを使う |
+| `plugin/` | 利用者が入れるもの。Claude Code のプラグインとして入れると、このフォルダだけが入る |
+| `plugin/.claude-plugin/plugin.json` | プラグインの設定（名前・版など） |
+| `plugin/skills/video-transcribe/` | スキル。`npx skills` で入れるときも、プラグインとして入れるときも、このフォルダが入る |
+| `plugin/skills/video-transcribe/SKILL.md` | エージェントへの指示 |
+| `plugin/skills/video-transcribe/scripts/transcribe.py` | エージェントが実行するスクリプト。Python の標準ライブラリだけを使う |
+| `.claude-plugin/marketplace.json` | このリポジトリをマーケットプレイスにする設定。`plugin/` を載せる。`npx skills` もこの設定を読み、`plugin/skills/` からスキルを探す |
 | `tests/` | 単体テスト。ネットワーク・yt-dlp・Whisper は要らない（偽のコマンドで代わりにする） |
-| `.claude-plugin/` | Claude Code のプラグインの設定（`plugin.json`）と、このリポジトリをマーケットプレイスにする設定（`marketplace.json`） |
 | `CHANGELOG.md` | リリースごとの変更 |
 | `docs/` | この案内のような、開発者向けの資料 |
 
@@ -24,7 +26,7 @@ python3 -m unittest discover -s tests -v
 
 CI でも、対応する中でいちばん古い Python と、今の Python で同じテストを実行します。Python の版は [ci.yml][ci] にあります。
 
-`.claude-plugin/` を変えたら、`claude plugin validate .` で確かめます（CI には Claude Code が無いので、手元で行います）。アイコンを置くまでは、アイコンが無いという警告が出ます。アイコンは、Anthropic のディレクトリに初めて保存・申し込みをしたときだけ一覧に使われ、あとから変えられないので、申し込みの前に決めます。
+`.claude-plugin/` か `plugin/` の中の設定を変えたら、`claude plugin validate .` で確かめます（マーケットプレイスと、そこに載せたプラグインの両方を確かめます。CI には Claude Code が無いので、手元で行います）。アイコンを置くまでは、アイコンが無いという警告が出ます。アイコンは、Anthropic のディレクトリに初めて保存・申し込みをしたときだけ一覧に使われ、あとから変えられないので、申し込みの前に決めます。
 
 ## 変更の記録
 

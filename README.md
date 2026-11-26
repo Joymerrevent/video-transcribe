@@ -48,7 +48,7 @@ Ask your agent, for example:
 The agent runs `scripts/transcribe.py` and reads the transcript. You can also run the script yourself:
 
 ```bash
-python3 skills/video-transcribe/scripts/transcribe.py "<url-or-file>" [--lang ja,en] [--whisper]
+python3 plugin/skills/video-transcribe/scripts/transcribe.py "<url-or-file>" [--lang ja,en] [--whisper]
 ```
 
 Run it with `--help` for all options and `--version` for the version. Transcripts are cached in `~/.cache/video-transcribe/`. The script prints only a short JSON report, never the whole transcript.
@@ -130,7 +130,7 @@ Whisper は、字幕のない動画と手元のファイルを文字に起こす
 エージェントは `scripts/transcribe.py` を実行し、できた文字起こしを読みます。スクリプトを直接実行することもできます。
 
 ```bash
-python3 skills/video-transcribe/scripts/transcribe.py "<URL かファイル>" [--lang ja,en] [--whisper]
+python3 plugin/skills/video-transcribe/scripts/transcribe.py "<URL かファイル>" [--lang ja,en] [--whisper]
 ```
 
 すべてのオプションは `--help` で、版は `--version` で確かめられます。文字起こしは `~/.cache/video-transcribe/` に保存され、同じ動画をもう一度頼むとすぐに返します。スクリプトが画面に出すのは短い報告（JSON）だけで、文字起こしの全文は出しません。
