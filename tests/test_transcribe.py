@@ -170,6 +170,24 @@ class BuildMarkdownTest(unittest.TestCase):
         for key in fields.keys() - okf:
             self.assertTrue(key.startswith("x-video-transcribe-"), key)
 
+    OKF_KEYS = ["type", "title", "description", "resource", "tags", "generated",
+                "verified", "sources", "status", "stale_after", "superseded_by"]
+
+    def test_okf_keys_are_always_written_with_null_for_no_value(self):
+        fields = frontmatter(transcribe.build_markdown({"title": "x.mp3", "method": "whisper"}, []))
+        self.assertEqual(list(fields), self.OKF_KEYS + ["x-video-transcribe-method"])
+        for key in ("resource", "verified", "sources", "stale_after", "superseded_by"):
+            self.assertIsNone(fields[key], key)
+        self.assertEqual(fields["status"], "stable")  # OKF's default when status is absent
+
+    def test_extension_keys_follow_okf_keys(self):
+        info = {"source": "https://example.com/v", "title": "t", "uploader": "me",
+                "duration": "00:01:00", "upload_date": "20260102", "method": "whisper", "language": "ja"}
+        fields = frontmatter(transcribe.build_markdown(info, []))
+        self.assertEqual(list(fields), self.OKF_KEYS + [
+            "x-video-transcribe-uploader", "x-video-transcribe-duration",
+            "x-video-transcribe-upload-date", "x-video-transcribe-method", "x-video-transcribe-language"])
+
     def test_local_file_resource_is_a_file_uri(self):
         path = os.path.join(TMP.name, "my talk.mp4")
         fields = frontmatter(transcribe.build_markdown({"source": path, "title": "my talk.mp4"}, []))
