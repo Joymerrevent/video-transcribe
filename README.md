@@ -58,13 +58,9 @@ Whisper and auto-generated captions can mishear names and numbers. To check them
 
 Auto-translated captions are never used, because they are a machine translation of what was said. Auto-generated captions often lack punctuation; pass `--whisper` (or ask the agent to use Whisper) for cleaner text.
 
-## Development
+## Security
 
-```bash
-python3 -m unittest discover -s tests -v
-```
-
-CI runs the same tests on Python 3.9 and 3.13. Report security issues as described in [SECURITY.md][security]. To publish a new version, follow [docs/releasing.md][releasing].
+To report a security issue, follow [SECURITY.md][security] instead of opening a public issue.
 
 ## Credits
 
@@ -136,13 +132,9 @@ Whisper と自動生成の字幕は、人名や数字を聞き違えることが
 
 自動翻訳の字幕は使いません。自動翻訳の字幕は、話した内容を機械で翻訳したもので、文字起こしではないためです。自動生成の字幕は句読点がなく読みにくいことが多いので、きれいな文章にしたいときは `--whisper` を付けて（またはエージェントに「Whisper で」と頼んで）ください。
 
-### 開発
+### セキュリティ
 
-```bash
-python3 -m unittest discover -s tests -v
-```
-
-CI でも、Python 3.9 と 3.13 で同じテストを実行します。セキュリティの問題の報告のしかたは [SECURITY.md][security] を見てください。新しい版を公開する手順は [docs/releasing.md][releasing] にあります。
+セキュリティの問題は、公開の Issue ではなく、[SECURITY.md][security] の手順で報告してください。
 
 ### クレジット
 
@@ -158,5 +150,4 @@ CI でも、Python 3.9 と 3.13 で同じテストを実行します。セキュ
 [license]: LICENSE
 [okf]: https://github.com/open-knowledge-format/open-knowledge-format/blob/main/SPEC.md
 [security]: SECURITY.md
-[releasing]: docs/releasing.md
 [releases]: https://github.com/Joymerrevent/video-transcribe/releases
