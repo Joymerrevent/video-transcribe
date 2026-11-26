@@ -19,6 +19,14 @@ This installs the latest code on `main`. To install a released version, add its 
 npx skills add Joymerrevent/video-transcribe@<tag> --skill video-transcribe
 ```
 
+In Claude Code 2.1.275 or later, you can install it as a plugin instead:
+
+```text
+/plugin install video-transcribe --marketplace Joymerrevent/video-transcribe
+```
+
+To get a new version later, run `claude plugin update video-transcribe@video-transcribe`. Use one of these ways, not both: each way installs its own copy of the skill.
+
 Then install the tools the script calls:
 
 ```bash
@@ -40,7 +48,7 @@ Ask your agent, for example:
 The agent runs `scripts/transcribe.py` and reads the transcript. You can also run the script yourself:
 
 ```bash
-python3 skills/video-transcribe/scripts/transcribe.py "<url-or-file>" [--lang ja,en] [--whisper]
+python3 plugin/skills/video-transcribe/scripts/transcribe.py "<url-or-file>" [--lang ja,en] [--whisper]
 ```
 
 Run it with `--help` for all options and `--version` for the version. Transcripts are cached in `~/.cache/video-transcribe/`. The script prints only a short JSON report, never the whole transcript.
@@ -93,6 +101,14 @@ npx skills add Joymerrevent/video-transcribe
 npx skills add Joymerrevent/video-transcribe@<タグ> --skill video-transcribe
 ```
 
+Claude Code 2.1.275 以降では、代わりにプラグインとして入れることもできます。
+
+```text
+/plugin install video-transcribe --marketplace Joymerrevent/video-transcribe
+```
+
+新しい版が出たら、`claude plugin update video-transcribe@video-transcribe` で更新します。入れ方はどちらか 1 つにしてください。両方で入れると、同じスキルが 2 つ入ります。
+
 スクリプトが使うツールも入れます。
 
 ```bash
@@ -114,7 +130,7 @@ Whisper は、字幕のない動画と手元のファイルを文字に起こす
 エージェントは `scripts/transcribe.py` を実行し、できた文字起こしを読みます。スクリプトを直接実行することもできます。
 
 ```bash
-python3 skills/video-transcribe/scripts/transcribe.py "<URL かファイル>" [--lang ja,en] [--whisper]
+python3 plugin/skills/video-transcribe/scripts/transcribe.py "<URL かファイル>" [--lang ja,en] [--whisper]
 ```
 
 すべてのオプションは `--help` で、版は `--version` で確かめられます。文字起こしは `~/.cache/video-transcribe/` に保存され、同じ動画をもう一度頼むとすぐに返します。スクリプトが画面に出すのは短い報告（JSON）だけで、文字起こしの全文は出しません。

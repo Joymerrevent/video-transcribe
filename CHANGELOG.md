@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog][keepachangelog], and this project foll
 
 ## [Unreleased]
 
+### Added
+
+- Can be installed as a Claude Code plugin: `/plugin install video-transcribe --marketplace Joymerrevent/video-transcribe`.
+
 ## [0.1.0] - 2026-11-26
 
 ### Added

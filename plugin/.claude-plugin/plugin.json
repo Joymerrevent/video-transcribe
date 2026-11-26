@@ -1,0 +1,13 @@
+{
+  "name": "video-transcribe",
+  "version": "0.1.0",
+  "description": "Turn a video into a timestamped transcript: YouTube, any site yt-dlp supports, or a local file. Uses the video's subtitles or local Whisper, and uploads nothing.",
+  "author": {
+    "name": "Joymerrevent",
+    "url": "https://joymerrevent.com/"
+  },
+  "homepage": "https://github.com/Joymerrevent/video-transcribe",
+  "repository": "https://github.com/Joymerrevent/video-transcribe",
+  "license": "MIT",
+  "keywords": ["transcription", "transcript", "video", "youtube", "subtitles", "whisper", "yt-dlp"]
+}

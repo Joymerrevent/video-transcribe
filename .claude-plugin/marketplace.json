@@ -1,0 +1,15 @@
+{
+  "name": "video-transcribe",
+  "description": "Video Transcribe for Claude Code, served from its own repository.",
+  "owner": {
+    "name": "Joymerrevent",
+    "url": "https://joymerrevent.com/"
+  },
+  "plugins": [
+    {
+      "name": "video-transcribe",
+      "source": "./plugin",
+      "description": "Turn a video into a timestamped transcript, using its subtitles or local Whisper."
+    }
+  ]
+}
