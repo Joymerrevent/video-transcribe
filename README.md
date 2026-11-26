@@ -19,6 +19,14 @@ This installs the latest code on `main`. To install a released version, add its 
 npx skills add Joymerrevent/video-transcribe@<tag> --skill video-transcribe
 ```
 
+In Claude Code 2.1.275 or later, you can install it as a plugin instead:
+
+```text
+/plugin install video-transcribe --marketplace Joymerrevent/video-transcribe
+```
+
+To get a new version later, run `claude plugin update video-transcribe@joymerrevent`. Use one of these ways, not both: each way installs its own copy of the skill.
+
 Then install the tools the script calls:
 
 ```bash
@@ -92,6 +100,14 @@ npx skills add Joymerrevent/video-transcribe
 ```bash
 npx skills add Joymerrevent/video-transcribe@<タグ> --skill video-transcribe
 ```
+
+Claude Code 2.1.275 以降では、代わりにプラグインとして入れることもできます。
+
+```text
+/plugin install video-transcribe --marketplace Joymerrevent/video-transcribe
+```
+
+新しい版が出たら、`claude plugin update video-transcribe@joymerrevent` で更新します。入れ方はどちらか 1 つにしてください。両方で入れると、同じスキルが 2 つ入ります。
 
 スクリプトが使うツールも入れます。
 

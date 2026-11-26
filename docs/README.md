@@ -12,6 +12,7 @@
 | `skills/video-transcribe/SKILL.md` | エージェントへの指示 |
 | `skills/video-transcribe/scripts/transcribe.py` | エージェントが実行するスクリプト。Python の標準ライブラリだけを使う |
 | `tests/` | 単体テスト。ネットワーク・yt-dlp・Whisper は要らない（偽のコマンドで代わりにする） |
+| `.claude-plugin/` | Claude Code のプラグインの設定（`plugin.json`）と、このリポジトリをマーケットプレイスにする設定（`marketplace.json`） |
 | `CHANGELOG.md` | リリースごとの変更 |
 | `docs/` | この案内のような、開発者向けの資料 |
 
@@ -22,6 +23,8 @@ python3 -m unittest discover -s tests -v
 ```
 
 CI でも、対応する中でいちばん古い Python と、今の Python で同じテストを実行します。Python の版は [ci.yml][ci] にあります。
+
+`.claude-plugin/` を変えたら、`claude plugin validate .` で確かめます（CI には Claude Code が無いので、手元で行います）。アイコンを置くまでは、アイコンが無いという警告が出ます。アイコンは、Anthropic のディレクトリに初めて保存・申し込みをしたときだけ一覧に使われ、あとから変えられないので、申し込みの前に決めます。
 
 ## 変更の記録
 
