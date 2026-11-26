@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog][keepachangelog], and this project foll
 
 ## [Unreleased]
 
+### Changed
+
+- The `--save` frontmatter always writes every OKF key that applies to any type: `null` for `verified`, `sources`, `stale_after`, and `superseded_by`, and `status: "stable"`. Keys outside OKF are still written only when they have a value.
+- In the `--save` frontmatter, `x-video-transcribe-upload_date` is renamed `x-video-transcribe-upload-date`, like the other `x-video-transcribe-*` keys. Files saved by earlier versions keep the old name.
+
 ## [0.2.0] - 2026-11-26
 
 ### Added
