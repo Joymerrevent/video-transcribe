@@ -512,22 +512,33 @@ def build_markdown(info: dict, lines: list[str]) -> str:
     if re.fullmatch(r"\d{8}", date):
         date = f"{date[:4]}-{date[4:6]}-{date[6:]}"
     now = datetime.datetime.now().astimezone().isoformat(timespec="seconds")
-    fields = {
+    # OKF keys that apply to any type are always written, null where there is no value,
+    # so a reader that expects every key finds them. "stable" is OKF's default status.
+    okf = {
         "type": "Reference",
         "title": title,
         "description": f"Transcript of the video \"{title}\"{by}.",
         "resource": resource_uri(info),
         "tags": ["transcript"],
         "generated": {"by": f"video-transcribe/{VERSION}", "at": now},
-        # Keys outside OKF get the x-<producer>- prefix, which OKF never uses for its own keys.
+        "verified": None,
+        "sources": None,
+        "status": "stable",
+        "stale_after": None,
+        "superseded_by": None,
+    }
+    # Keys outside OKF get the x-<producer>- prefix, which OKF never uses for its own keys,
+    # and are written only when there is a value.
+    extra = {
         "x-video-transcribe-uploader": info.get("uploader"),
         "x-video-transcribe-duration": info.get("duration"),
-        "x-video-transcribe-upload_date": date or None,
+        "x-video-transcribe-upload-date": date or None,
         "x-video-transcribe-method": info.get("method"),
         "x-video-transcribe-language": info.get("language"),
     }
-    # JSON strings and arrays are valid YAML, so json.dumps quotes values safely.
-    out = ["---"] + [f"{k}: {json.dumps(v, ensure_ascii=False)}" for k, v in fields.items() if v]
+    fields = {**okf, **{k: v for k, v in extra.items() if v}}
+    # JSON strings, arrays, and null are valid YAML, so json.dumps quotes values safely.
+    out = ["---"] + [f"{k}: {json.dumps(v, ensure_ascii=False)}" for k, v in fields.items()]
     out += ["---", "", f"# {title}", ""]
     chapters = list(info.get("chapters") or [])
     for line in lines:

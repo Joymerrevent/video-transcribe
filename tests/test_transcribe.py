@@ -145,15 +145,14 @@ class BuildMarkdownTest(unittest.TestCase):
         front, body = md.split("\n---\n", 1)
         self.assertTrue(front.startswith("---\ntype: \"Reference\"\n"))
         self.assertIn('title: "Say \\"hi\\""', front)
-        self.assertIn('x-video-transcribe-upload_date: "2026-01-02"', front)
+        self.assertIn('x-video-transcribe-upload-date: "2026-01-02"', front)
         self.assertIn('tags: ["transcript"]', front)
         self.assertIn("\ngenerated: ", front)
         self.assertEqual(body, '\n# Say "hi"\n\n## Intro\n\n- [00:00:01] a\n\n## Main\n\n- [00:00:31] b\n')
 
-    def test_missing_fields_are_left_out(self):
+    def test_missing_extension_values_are_left_out(self):
         md = transcribe.build_markdown({"title": "x.mp3", "method": "whisper"}, ["[00:00:00] hi"])
         self.assertNotIn("uploader", md)
-        self.assertNotIn("null", md)
         self.assertTrue(md.endswith("# x.mp3\n\n- [00:00:00] hi\n"))
 
     def test_okf_v03_keys(self):
@@ -166,9 +165,28 @@ class BuildMarkdownTest(unittest.TestCase):
         self.assertEqual(fields["resource"], "https://www.youtube.com/watch?v=abc")
         self.assertEqual(fields["x-video-transcribe-method"], "subtitles")
         # Legacy and unprefixed keys are gone; every non-OKF key has the x- prefix.
-        okf = {"type", "title", "description", "resource", "tags", "generated"}
+        okf = {"type", "title", "description", "resource", "tags", "generated",
+               "verified", "sources", "status", "stale_after", "superseded_by"}
         for key in fields.keys() - okf:
             self.assertTrue(key.startswith("x-video-transcribe-"), key)
+
+    OKF_KEYS = ["type", "title", "description", "resource", "tags", "generated",
+                "verified", "sources", "status", "stale_after", "superseded_by"]
+
+    def test_okf_keys_are_always_written_with_null_for_no_value(self):
+        fields = frontmatter(transcribe.build_markdown({"title": "x.mp3", "method": "whisper"}, []))
+        self.assertEqual(list(fields), self.OKF_KEYS + ["x-video-transcribe-method"])
+        for key in ("resource", "verified", "sources", "stale_after", "superseded_by"):
+            self.assertIsNone(fields[key], key)
+        self.assertEqual(fields["status"], "stable")  # OKF's default when status is absent
+
+    def test_extension_keys_follow_okf_keys(self):
+        info = {"source": "https://example.com/v", "title": "t", "uploader": "me",
+                "duration": "00:01:00", "upload_date": "20260102", "method": "whisper", "language": "ja"}
+        fields = frontmatter(transcribe.build_markdown(info, []))
+        self.assertEqual(list(fields), self.OKF_KEYS + [
+            "x-video-transcribe-uploader", "x-video-transcribe-duration",
+            "x-video-transcribe-upload-date", "x-video-transcribe-method", "x-video-transcribe-language"])
 
     def test_local_file_resource_is_a_file_uri(self):
         path = os.path.join(TMP.name, "my talk.mp4")
