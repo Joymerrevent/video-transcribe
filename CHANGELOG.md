@@ -5,9 +5,15 @@ The format is based on [Keep a Changelog][keepachangelog], and this project foll
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-26
+
 ### Added
 
 - Can be installed as a Claude Code plugin: `/plugin install video-transcribe --marketplace Joymerrevent/video-transcribe`.
+
+### Changed
+
+- The skill moved from `skills/video-transcribe/` to `plugin/skills/video-transcribe/`. Installing with `npx skills` works as before. If you run the script from a clone of this repository, use the new path.
 
 ## [0.1.0] - 2026-11-26
 
@@ -24,5 +30,6 @@ The format is based on [Keep a Changelog][keepachangelog], and this project foll
 
 [keepachangelog]: https://keepachangelog.com/en/1.1.0/
 [semver]: https://semver.org/
-[Unreleased]: https://github.com/Joymerrevent/video-transcribe/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Joymerrevent/video-transcribe/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/Joymerrevent/video-transcribe/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Joymerrevent/video-transcribe/releases/tag/v0.1.0
