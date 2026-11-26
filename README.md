@@ -4,8 +4,11 @@ An agent skill that turns a video into a timestamped text transcript. [日本語
 
 - Works with YouTube and any other site [yt-dlp][yt-dlp] supports, plus local audio and video files.
 - Uses the platform's subtitles when they exist. When they don't, it downloads the audio only and transcribes it locally with Whisper.
-- Nothing is sent to an external API. Only yt-dlp and the one-time Whisper model download use the network.
-- One Python script with no Python dependencies. It does not summarize; the agent writes summaries or answers from the transcript in whatever form you ask for.
+- The transcription itself uses no AI tokens. The agent only runs the script and reads its short report: the title, how the video was transcribed, where the transcript is, and any warnings. The agent reads the transcript only when you ask about the video.
+- The tokens the agent uses for a transcription do not depend on the video's length. Because the agent does not read the transcript while transcribing, an 8-hour video uses about as many tokens as a 19-second one.
+- Transcription accuracy does not depend on the AI model the agent uses. It comes from the video's subtitles or from Whisper, a speech recognition model that runs on your computer.
+- The script sends nothing to an external API. Only yt-dlp and the one-time Whisper model download use the network.
+- One Python script with no Python dependencies. It does not summarize; when you ask about the video, the agent reads the transcript and answers in whatever form you ask for.
 
 ## Install
 
@@ -45,7 +48,7 @@ Ask your agent, for example:
 - "What does this video say about pricing? https://vimeo.com/..."
 - "Transcribe ~/Movies/meeting.mp4"
 
-The agent runs `scripts/transcribe.py` and reads the transcript. You can also run the script yourself:
+The agent runs `scripts/transcribe.py` and tells you the title, how the video was transcribed, where the transcript is, and any warnings. It does not read the transcript at that point. When you ask about the video, as in the second example, the agent reads the transcript (the whole file, or only the parts it needs) and answers. You can also run the script yourself:
 
 ```bash
 python3 plugin/skills/video-transcribe/scripts/transcribe.py "<url-or-file>" [--lang ja,en] [--whisper]
@@ -55,7 +58,7 @@ Run it with `--help` for all options and `--version` for the version. Transcript
 
 To keep the transcript in your project, add `--save <dir>` (or tell the agent where to save it). It writes `<dir>/<site>-<id>.md`, a Markdown file with [OKF][okf] v0.3 frontmatter (`type: Reference`, title, the video URL as `resource`, and so on; every OKF key is written, with `null` where there is no value) and the timestamped lines, split by chapter when the video has chapters. An existing file is kept unless you add `--force`.
 
-Whisper and auto-generated captions can mishear names and numbers. To check them, add `--recheck` (or ask the agent to check the transcript). The script transcribes the audio again with a larger Whisper model and writes `recheck.md`, which puts the two transcripts side by side and lists the lines where their numbers differ. The agent then fixes the spots it can decide from the two transcripts and the context, and records each fix. The larger model is downloaded on first use (about 3 GB). Transcripts from human-made subtitles are not rechecked.
+Whisper and auto-generated captions can mishear names and numbers. To check them, add `--recheck` (or ask the agent to check the transcript). The script transcribes the audio again with a larger Whisper model and writes `recheck.md`, which puts the two transcripts side by side and lists the lines where their numbers differ. The agent then fixes the spots it can decide from the two transcripts and the context, and records each fix. The agent does this only when you ask for it: to make the fixes, it reads `recheck.md` and the transcript, so this step uses AI tokens, and how good the fixes are depends on the agent's AI model. The larger model is downloaded on first use (about 3 GB). Transcripts from human-made subtitles are not rechecked.
 
 ## How subtitles are chosen
 
@@ -86,8 +89,11 @@ The approach is based on the `watch-video` skill in [coreyhaines31/makerskills][
 
 - YouTube のほか、[yt-dlp][yt-dlp] が対応しているサイトの動画と、手元の音声・動画ファイルを文字に起こせます。
 - 動画に字幕があれば字幕を使います。字幕がなければ音声だけをダウンロードし、手元の PC で Whisper を使って文字に起こします。
-- 音声や文字起こしを外部の API に送りません。ネットワークを使うのは、yt-dlp と、初回の Whisper のモデルのダウンロードだけです。
-- 中身は Python のスクリプト 1 本で、追加の Python パッケージは要りません。要約はしません。要約や質問への答えは、文字起こしをもとにエージェントが頼まれた形で書きます。
+- 文字起こしの処理そのものでは、AI のトークンを使いません。エージェントは、スクリプトを実行して短い報告（タイトル・文字起こしの方法・文字起こしの保存場所・警告）を読むだけです。エージェントが文字起こしを読むのは、動画について質問したときだけです。
+- 文字起こしで AI が使うトークンは、動画の長さに左右されません。文字起こしの間、エージェントは文字起こしを読まないので、8 時間の動画でも 19 秒の動画とほぼ同じトークンで済みます。
+- 文字起こしの精度は、エージェントが使っている AI のモデルに左右されません。精度は、動画の字幕か、手元の PC で動く音声認識のモデル（Whisper）で決まります。
+- スクリプトは、音声や文字起こしを外部の API に送りません。ネットワークを使うのは、yt-dlp と、初回の Whisper のモデルのダウンロードだけです。
+- 中身は Python のスクリプト 1 本で、追加の Python パッケージは要りません。要約はしません。動画について質問すると、エージェントが文字起こしを読み、頼まれた形で答えます。
 
 ### インストール
 
@@ -127,7 +133,7 @@ Whisper は、字幕のない動画と手元のファイルを文字に起こす
 - 「この動画で料金について何と言っている？ https://vimeo.com/...」
 - 「~/Movies/meeting.mp4 を文字起こしして」
 
-エージェントは `scripts/transcribe.py` を実行し、できた文字起こしを読みます。スクリプトを直接実行することもできます。
+エージェントは `scripts/transcribe.py` を実行し、タイトル・文字起こしの方法・文字起こしの保存場所・警告を伝えます。この時点では、文字起こしを読みません。2 つめの例のように動画について質問すると、エージェントが文字起こしを読み（全部を読むか、必要な部分だけを読むかはエージェントが決めます）、答えます。スクリプトを直接実行することもできます。
 
 ```bash
 python3 plugin/skills/video-transcribe/scripts/transcribe.py "<URL かファイル>" [--lang ja,en] [--whisper]
@@ -137,7 +143,7 @@ python3 plugin/skills/video-transcribe/scripts/transcribe.py "<URL かファイ�
 
 文字起こしをプロジェクトに残したいときは、`--save <フォルダ>` を付けます（エージェントに保存先を伝えても同じです）。`<フォルダ>/<サイト>-<ID>.md` に、[OKF][okf] v0.3 のフロントマター（`type: Reference`・タイトル・`resource` に入れた動画の URL など。OKF の項目は、値が無ければ `null` にして全部書きます）と時刻付きの文字起こしを書いた Markdown を作ります。動画に章があれば、章ごとに見出しで区切ります。同じ名前のファイルがあるときは上書きしません。上書きするときは `--force` を付けます。
 
-Whisper と自動生成の字幕は、人名や数字を聞き違えることがあります。確かめたいときは `--recheck` を付けます（エージェントに「聞き違いを確かめて」と頼んでも同じです）。スクリプトは大きいほうの Whisper のモデルで音声をもう一度文字に起こし、2 つの文字起こしを並べた `recheck.md` を作ります。`recheck.md` には、数字が食い違う行の一覧も入ります。エージェントは、2 つの文字起こしと前後の文脈で決められる箇所を直し、直したことを記録します。大きいほうのモデルは、初めて使うときにダウンロードします（約 3 GB）。人が作った字幕の文字起こしは、確かめる対象にしません。
+Whisper と自動生成の字幕は、人名や数字を聞き違えることがあります。確かめたいときは `--recheck` を付けます（エージェントに「聞き違いを確かめて」と頼んでも同じです）。スクリプトは大きいほうの Whisper のモデルで音声をもう一度文字に起こし、2 つの文字起こしを並べた `recheck.md` を作ります。`recheck.md` には、数字が食い違う行の一覧も入ります。エージェントは、2 つの文字起こしと前後の文脈で決められる箇所を直し、直したことを記録します。エージェントが直すのは、頼まれたときだけです。直すときは `recheck.md` と文字起こしを読むので、AI のトークンを使います。直した結果の良し悪しは、エージェントが使っている AI のモデルに左右されます。大きいほうのモデルは、初めて使うときにダウンロードします（約 3 GB）。人が作った字幕の文字起こしは、確かめる対象にしません。
 
 ### 字幕の選び方
 

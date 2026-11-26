@@ -5,6 +5,11 @@ The format is based on [Keep a Changelog][keepachangelog], and this project foll
 
 ## [Unreleased]
 
+### Changed
+
+- After transcribing, the agent no longer reads the transcript file, so the tokens it uses for a transcription no longer grow with the video's length. It reads the file only when you ask about the video, and decides then whether to read the whole file or only the parts it needs. Its reply after transcribing gives only the title, the method, where the transcript is, and any warnings.
+- The agent runs `--recheck` and fixes the transcript only when you ask for it, because fixing the transcript means reading it, which uses AI tokens.
+
 ## [0.3.0] - 2026-11-26
 
 ### Changed
