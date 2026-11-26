@@ -1,7 +1,12 @@
 """Unit tests for the pure functions in transcribe.py (no network, no Whisper)."""
+import contextlib
+import decimal
 import importlib.util
+import io
 import os
+import sys
 import tempfile
+import types
 import unittest
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -130,7 +135,7 @@ class BuildMarkdownTest(unittest.TestCase):
 
 class BackendsTest(unittest.TestCase):
     def test_audio_path_comes_after_end_of_options(self):
-        for cmd, model, build in transcribe.BACKENDS:
+        for cmd, model, _, build in transcribe.BACKENDS:
             args = build("-x.mp3", model, "/tmp/out", "ja")
             self.assertEqual(args[0], cmd)
             self.assertEqual(args[-2:], ["--", "-x.mp3"], cmd)
@@ -145,6 +150,185 @@ class HelpersTest(unittest.TestCase):
     def test_slug(self):
         self.assertEqual(transcribe.slug("Youtube-abc/def?x"), "Youtube-abc-def-x")
         self.assertEqual(transcribe.slug("///"), "video")
+
+
+def nums(*values) -> set:
+    return {decimal.Decimal(str(v)) for v in values}
+
+
+class NumbersTest(unittest.TestCase):
+    def test_ways_of_writing_the_same_number_match(self):
+        for text in ["9万7千", "9万7000", "97,000", "９万７千", "九万七千"]:
+            self.assertEqual(transcribe.numbers(text), nums(97000), text)
+
+    def test_kanji_and_mixed_numbers(self):
+        self.assertEqual(transcribe.numbers("二〇二三年"), nums(2023))
+        self.assertEqual(transcribe.numbers("二十三人"), nums(23))
+        self.assertEqual(transcribe.numbers("三百五十万"), nums(3500000))
+        self.assertEqual(transcribe.numbers("1億2000万"), nums(120000000))
+        self.assertEqual(transcribe.numbers("1.5倍、5."), nums(1.5, 5))
+
+    def test_commas(self):
+        self.assertEqual(transcribe.numbers("1本4,500ドル"), nums(1, 4500))
+        self.assertEqual(transcribe.numbers("1,234,567"), nums(1234567))
+        # A comma that does not group thousands lists numbers: four or five.
+        self.assertEqual(transcribe.numbers("4,5本"), nums(4, 5))
+        self.assertEqual(transcribe.numbers("3,4年"), nums(3, 4))
+
+    def test_kanji_only_numbers_are_matched_but_not_reported(self):
+        self.assertEqual(transcribe.numbers("一緒に千葉へ"), nums(1, 1000))
+        self.assertEqual(transcribe.numbers("一緒に千葉へ", digits_only=True), set())
+        self.assertEqual(transcribe.numbers("2人と一緒", digits_only=True), nums(2))
+
+
+class TranscriptLinesTest(unittest.TestCase):
+    def test_round_trip_with_and_without_end(self):
+        path = os.path.join(TMP.name, "lines.txt")
+        transcribe.write_lines(path, [(1.5, "a"), (3600, "b")])
+        self.assertEqual(transcribe.read_lines(path), [(1, None, "a"), (3600, None, "b")])
+        transcribe.write_lines(path, [(1.5, 4.2, "a")])
+        with open(path, encoding="utf-8") as f:
+            self.assertEqual(f.read(), "[00:00:01-00:00:05] a\n")  # the end is rounded up
+        self.assertEqual(transcribe.read_lines(path), [(1, 5, "a")])
+
+    def test_vtt_end_time_with_cue_settings(self):
+        vtt = write("WEBVTT\n\n00:00:01.000 --> 00:00:03.500 align:start position:0%\nhi\n", ".vtt")
+        self.assertEqual(transcribe.parse_timed(vtt), [(1.0, 3.5, "hi")])
+
+
+INFO = {"title": "t", "method": "whisper", "model": "turbo", "recheck": {"model": "large-v3"}}
+
+
+def section(md: str, title: str) -> str:
+    return md.split(f"## {title}", 1)[1].split("\n## ", 1)[0]
+
+
+class BuildRecheckTest(unittest.TestCase):
+    def test_numbers_that_differ_in_either_direction(self):
+        first = [(10, None, "1本4,500ドル"), (40, None, "くじごじで働く"), (70, None, "9万7千ドル")]
+        second = [(9, 12, "1本400から500ドル"), (39, 42, "9時5時で働く"), (68, 72, "9万7000ドル")]
+        md, stats = transcribe.build_recheck(INFO, first, second)
+        self.assertEqual(stats["numbers_differ"], 2)
+        diff = section(md, "Numbers that differ")
+        self.assertIn("### [00:00:10]\n\n- First: 1本4,500ドル\n- Second:\n  - [00:00:09] 1本400から500ドル\n"
+                      "- Only in the first: 4500\n- Only in the second: 400, 500\n", diff)
+        self.assertIn("### [00:00:40]", diff)
+        self.assertIn("- Only in the second: 5, 9\n", diff)
+        self.assertNotIn("[00:01:10]", diff)  # 9万7千 and 9万7000 are the same number
+
+    def test_window_is_8_seconds_before_to_12_after(self):
+        first = [(100, None, "5本")]
+        for start, matched in [(93, True), (111, True), (88, False), (113, False)]:
+            second = [(start, start + 1, "5本")]
+            _, stats = transcribe.build_recheck(INFO, first, second)
+            self.assertEqual(stats["not_covered"] == [], matched, start)
+
+    def test_lines_without_a_second_transcript_are_not_covered_not_different(self):
+        first = [(0, None, "1"), (100, None, "2本"), (110, None, "3本"), (200, None, "4")]
+        second = [(0, 2, "1"), (199, 201, "4")]
+        md, stats = transcribe.build_recheck(INFO, first, second)
+        self.assertEqual(stats["numbers_differ"], 0)
+        self.assertEqual(stats["not_covered"], ["00:01:40-00:01:50"])
+        self.assertIn("- 00:01:40-00:01:50", section(md, "Not covered by the second transcript"))
+
+    def test_side_by_side_nests_each_second_line_under_the_closest_first_line(self):
+        first = [(0, None, "a"), (10, None, "b")]
+        second = [(1, 3, "A"), (6, 8, "B"), (12, 14, "C")]
+        md, _ = transcribe.build_recheck(INFO, first, second)
+        self.assertTrue(md.endswith(
+            "- [00:00:00] a\n  - [00:00:01] A\n- [00:00:10] b\n  - [00:00:06] B\n  - [00:00:12] C\n"))
+
+
+FAKE_WHISPER = """\
+import os, sys
+args = sys.argv[1:]
+out, model, audio = args[args.index("--output-dir") + 1], args[args.index("--model") + 1], args[-1]
+with open(os.environ["FAKE_LOG"], "a") as f:
+    f.write(f"whisper {model} {os.path.basename(audio)}\\n")
+# The full run "drops" everything after 14 seconds; a clip has one line.
+cues = [(0, 3, "clip line")] if audio.endswith("clip.wav") else [(0, 4, "first"), (10, 14, "1本400から500ドル")]
+with open(os.path.join(out, "whisper.srt"), "w") as f:
+    for i, (s, e, x) in enumerate(cues, 1):
+        f.write(f"{i}\\n00:00:{s:02},000 --> 00:00:{e:02},000\\n{x}\\n\\n")
+"""
+FAKE_FFMPEG = """\
+import os, sys
+with open(os.environ["FAKE_LOG"], "a") as f:
+    f.write("ffmpeg " + " ".join(sys.argv[1:]) + "\\n")
+open(sys.argv[-1], "w").close()
+"""
+
+
+class RecheckTest(unittest.TestCase):
+    """recheck() with fake mlx_whisper and ffmpeg commands on PATH."""
+
+    def setUp(self):
+        self.dir = tempfile.mkdtemp(dir=TMP.name)
+        bindir = os.path.join(self.dir, "bin")
+        os.mkdir(bindir)
+        for name, body in [("mlx_whisper", FAKE_WHISPER), ("ffmpeg", FAKE_FFMPEG)]:
+            path = os.path.join(bindir, name)
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(f"#!{sys.executable}\n{body}")
+            os.chmod(path, 0o755)
+        self.log = os.path.join(self.dir, "calls.log")
+        self.env = dict(os.environ)
+        os.environ.update(PATH=bindir + os.pathsep + os.environ["PATH"], FAKE_LOG=self.log)
+        self.txt = os.path.join(self.dir, "transcript.txt")
+        transcribe.write_lines(self.txt, [(0, "first"), (10, "1本4,500ドル"), (60, "last line")])
+
+    def tearDown(self):
+        os.environ.clear()
+        os.environ.update(self.env)
+
+    def calls(self) -> list[str]:
+        if not os.path.exists(self.log):
+            return []
+        with open(self.log, encoding="utf-8") as f:
+            return f.read().splitlines()
+
+    def recheck(self, info: dict, get_audio=lambda: "/media/audio.webm") -> dict:
+        args = types.SimpleNamespace(force=False, spoken_lang=None)
+        with contextlib.redirect_stderr(io.StringIO()):
+            return transcribe.recheck(args, info, get_audio, self.dir, self.txt)
+
+    def test_second_model_fills_gaps_and_is_cached(self):
+        info = {"title": "t", "method": "whisper", "language": "ja", "model": "turbo"}
+        report = self.recheck(info)
+        second = "mlx-community/whisper-large-v3-mlx"
+        self.assertEqual(self.calls(), [
+            f"whisper {second} audio.webm",
+            # The line at 60 s has nothing around it, so 55-75 s is cut out and done again.
+            "ffmpeg -nostdin -loglevel error -y -ss 55 -to 75 -i /media/audio.webm -ac 1 -ar 16000 "
+            + os.path.join(self.dir, "recheck", "clip.wav"),
+            f"whisper {second} clip.wav",
+        ])
+        with open(os.path.join(self.dir, "recheck.txt"), encoding="utf-8") as f:
+            self.assertEqual(f.read(), "[00:00:00-00:00:04] first\n"
+                                       "[00:00:10-00:00:14] 1本400から500ドル\n"
+                                       "[00:00:55-00:00:58] clip line\n")
+        self.assertFalse(os.path.exists(os.path.join(self.dir, "recheck", "clip.wav")))
+        self.assertEqual(report["numbers_differ"], 1)
+        self.assertEqual(report["not_covered"], [])
+        self.assertEqual(info["recheck"], {"backend": "mlx_whisper", "model": second,
+                                           "transcript": os.path.join(self.dir, "recheck.txt")})
+
+        os.remove(self.log)
+
+        def no_audio():
+            raise AssertionError("the cached second transcript needs no audio")
+        self.assertEqual(self.recheck(info, no_audio)["numbers_differ"], 1)
+        self.assertEqual(self.calls(), [])
+
+    def test_human_subtitles_are_not_rechecked(self):
+        with self.assertRaises(SystemExit):
+            self.recheck({"method": "subtitles", "language": "en"})
+        self.assertEqual(self.calls(), [])
+
+    def test_same_model_twice_is_refused(self):
+        with self.assertRaises(SystemExit):
+            self.recheck({"method": "whisper", "model": "mlx-community/whisper-large-v3-mlx"})
+        self.assertEqual(self.calls(), [])
 
 
 if __name__ == "__main__":

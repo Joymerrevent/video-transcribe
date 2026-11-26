@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog][keepachangelog].
 - Detects Whisper repetition loops and reports them as warnings.
 - Caches transcripts in `~/.cache/video-transcribe/`.
 - `--save <dir>` writes the transcript as Markdown with OKF (Open Knowledge Format) frontmatter, split by chapter.
+- `--recheck` transcribes the audio again with a larger Whisper model and writes `recheck.md`, which compares the two transcripts to find misheard words. The skill describes how the agent decides and records each fix.
 
 [keepachangelog]: https://keepachangelog.com/en/1.1.0/
 [Unreleased]: https://github.com/Joymerrevent/video-transcribe/commits/main
