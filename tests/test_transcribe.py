@@ -196,6 +196,16 @@ class VersionTest(unittest.TestCase):
         self.assertEqual(out.returncode, 0)
         self.assertEqual(out.stdout, f"video-transcribe {transcribe.VERSION}\n")
 
+    def test_plugin_manifests_match(self):
+        with open(os.path.join(HERE, "..", ".claude-plugin", "plugin.json"), encoding="utf-8") as f:
+            plugin = json.load(f)
+        with open(os.path.join(HERE, "..", ".claude-plugin", "marketplace.json"), encoding="utf-8") as f:
+            marketplace = json.load(f)
+        # Plugin users get a new copy only when this version changes.
+        self.assertEqual(plugin["version"], transcribe.VERSION,
+                         "set version in .claude-plugin/plugin.json to VERSION in transcribe.py")
+        self.assertEqual([p["name"] for p in marketplace["plugins"]], [plugin["name"]])
+
 
 class BackendsTest(unittest.TestCase):
     def test_audio_path_comes_after_end_of_options(self):
